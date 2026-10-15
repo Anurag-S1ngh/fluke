@@ -33,10 +33,10 @@
     "db:studio": "turbo run db:studio -F @fluke/db --",
     "db:generate": "turbo run db:generate -F @fluke/db --",
     "db:migrate": "turbo run db:migrate -F @fluke/db --",
-    "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/ && varlock codegen --path ./packages/redis/",
-    "postinstall": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/ && varlock codegen --path ./packages/redis/",
+    "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/ && varlock codegen --path ./packages/redis/ && varlock codegen --path ./packages/email/",
+    "postinstall": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/ && varlock codegen --path ./packages/redis/ && varlock codegen --path ./packages/email/",
     "check": "oxlint && oxfmt --write",
-"format": "oxfmt --write"
+    "format": "oxfmt --write"
   },
   "dependencies": {
     "zod": "catalog:"

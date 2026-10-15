@@ -1,0 +1,19 @@
+{
+  "name": "@fluke/email",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "resend": "^4.7.3"
+  },
+  "devDependencies": {
+    "@fluke/config": "workspace:*",
+    "typescript": "catalog:",
+    "varlock": "catalog:"
+  }
+}

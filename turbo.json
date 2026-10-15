@@ -39,6 +39,8 @@
     "CORS_ORIGIN",
     "DATABASE_URL",
     "REDIS_URL",
+    "RESEND_API_KEY",
+    "EMAIL_FROM",
     "NEXT_PUBLIC_SERVER_URL",
     "NODE_ENV",
     "VERCEL",
