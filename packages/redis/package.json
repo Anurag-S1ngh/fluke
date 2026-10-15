@@ -1,0 +1,19 @@
+{
+  "name": "@fluke/redis",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ioredis": "^5.6.1"
+  },
+  "devDependencies": {
+    "@fluke/config": "workspace:*",
+    "typescript": "catalog:",
+    "varlock": "catalog:"
+  }
+}

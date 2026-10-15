@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fluke/db": "workspace:*",
+    "@fluke/redis": "workspace:*",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "varlock": "catalog:",
