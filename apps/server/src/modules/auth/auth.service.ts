@@ -38,7 +38,13 @@ export const verify = async (email: string, userOTP: string): Promise<{ user: Au
   if (!value) {
     throw new AppError("Invalid OTP", 400);
   }
-  const { username, otp } = JSON.parse(value) as OTPPayload;
+  let payload: OTPPayload;
+  try {
+    payload = JSON.parse(value) as OTPPayload;
+  } catch {
+    throw new AppError("Invalid OTP", 400);
+  }
+  const { username, otp } = payload;
   if (otp !== userOTP) {
     throw new AppError("Invalid OTP", 400);
   }
