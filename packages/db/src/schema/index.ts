@@ -15,6 +15,7 @@ export const usersTable = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   balance: integer("balance").notNull().default(0), // last two digits represent decimals (e.g. 12.05 -> 1205)
+  reservedBalance: integer("reserved_balance").notNull().default(0),
   role: roleEnum("role").notNull().default("USER"),
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -113,6 +114,7 @@ export const positionsTable = pgTable(
       .references(() => marketsTable.id)
       .notNull(),
     quantity: integer("quantity").notNull(),
+    reservedQuantity: integer("reserved_quantity").notNull().default(0),
     outcome: outcomeEnum("outcome").notNull(),
     avgPrice: integer("avg_price").notNull(), // last two digist represent decimals
 
