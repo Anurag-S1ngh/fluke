@@ -1,3 +1,15 @@
+import type { outcomeEnum } from "@fluke/db/schema/enums";
+import type { marketsTable } from "@fluke/db/schema/index";
+
+export type MarketStatus = typeof marketsTable.$inferSelect.status;
+
+export type MarketOutcome = (typeof outcomeEnum.enumValues)[number];
+
+export interface ResolveMarketInput {
+  outcome?: MarketOutcome;
+  refund?: boolean;
+}
+
 export interface MarketSummary {
   id: string;
   question: string;

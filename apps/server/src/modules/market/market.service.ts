@@ -1,9 +1,14 @@
 import { db } from "@/services";
 import { AppError } from "@/types/error";
-import { marketsTable, ordersTable } from "@fluke/db/schema/index";
-import { desc, eq } from "drizzle-orm";
-
-type MarketStatus = typeof marketsTable.$inferSelect.status;
+import {
+  ledgerTable,
+  marketsTable,
+  ordersTable,
+  positionsTable,
+  usersTable,
+} from "@fluke/db/schema/index";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import type { MarketOutcome, MarketStatus, ResolveMarketInput } from "./market.types";
 
 export const listMarkets = async (status: MarketStatus = "OPEN") => {
   return db
@@ -81,28 +86,152 @@ export const closeMarket = async (marketId: string) => {
 
 export const resolveMarket = async (
   marketId: string,
-  input: { outcome?: "YES" | "NO"; refund?: boolean },
+  input: ResolveMarketInput,
   adminId: string,
 ) => {
+  const resolvableStatuses: MarketStatus[] = ["OPEN", "CLOSED"];
+  const cancellableOrderStatuses: Array<typeof ordersTable.$inferSelect.status> = [
+    "OPEN",
+    "PARTIALLY_FILLED",
+  ];
   const market = await getMarketById(marketId);
-  if (!(market.status === "OPEN" || market.status === "CLOSED")) {
+  if (!resolvableStatuses.includes(market.status)) {
     throw new AppError("market cannot be resolved in current state", 400);
   }
-  const [updated] = await db
-    .update(marketsTable)
-    .set({
-      status: input.refund ? "REFUND" : "RESOLVED",
-      outcome: input.refund ? null : (input.outcome ?? null),
-      resolvedBy: adminId,
-      resolvedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(marketsTable.id, marketId))
-    .returning();
-  if (!updated) {
-    throw new AppError("market not found", 404);
-  }
-  return updated;
+  const isRefund = input.refund === true;
+  const status = isRefund ? "REFUND" : "RESOLVED";
+  const outcome = isRefund ? null : (input.outcome ?? null);
+  const now = new Date();
+  const PAYOUT_PER_SHARE = 100; // one winning share pays $1.00 ( last two digits are decimals)
+
+  return db.transaction(async (tx) => {
+    const releaseCash = async (userId: string, amount: number) => {
+      const [user] = await tx
+        .select({ reservedBalance: usersTable.reservedBalance })
+        .from(usersTable)
+        .where(eq(usersTable.id, userId))
+        .for("update");
+      if (!user) {
+        throw new AppError("user not found", 404);
+      }
+      if (user.reservedBalance < amount) {
+        throw new AppError("reservation mismatch", 500);
+      }
+      await tx
+        .update(usersTable)
+        .set({
+          balance: sql`${usersTable.balance} + ${amount}`,
+          reservedBalance: sql`${usersTable.reservedBalance} - ${amount}`,
+          updatedAt: now,
+        })
+        .where(eq(usersTable.id, userId));
+      await tx.insert(ledgerTable).values({
+        type: "BID",
+        userId,
+        amount,
+        entryDirection: "CREDIT",
+      });
+    };
+
+    const releaseShares = async (userId: string, outcome: MarketOutcome, qty: number) => {
+      const [position] = await tx
+        .select()
+        .from(positionsTable)
+        .where(
+          and(
+            eq(positionsTable.userId, userId),
+            eq(positionsTable.marketId, marketId),
+            eq(positionsTable.outcome, outcome),
+          ),
+        )
+        .for("update");
+      if (!position || position.reservedQuantity < qty) {
+        throw new AppError("reservation mismatch", 500);
+      }
+      await tx
+        .update(positionsTable)
+        .set({ reservedQuantity: sql`${positionsTable.reservedQuantity} - ${qty}` })
+        .where(eq(positionsTable.id, position.id));
+    };
+
+    const marketPositions = await tx
+      .select()
+      .from(positionsTable)
+      .where(eq(positionsTable.marketId, marketId));
+
+    const credits = new Map<string, number>();
+    for (const position of marketPositions) {
+      const amount = isRefund
+        ? position.quantity * position.avgPrice
+        : position.outcome === outcome
+          ? position.quantity * PAYOUT_PER_SHARE
+          : 0;
+      if (amount > 0) {
+        credits.set(position.userId, (credits.get(position.userId) ?? 0) + amount);
+      }
+    }
+    for (const [userId, amount] of credits) {
+      await tx
+        .update(usersTable)
+        .set({
+          balance: sql`${usersTable.balance} + ${amount}`,
+          updatedAt: now,
+        })
+        .where(eq(usersTable.id, userId));
+      await tx.insert(ledgerTable).values({
+        type: isRefund ? "REFUND" : "PAYOUT",
+        userId,
+        amount,
+        entryDirection: "CREDIT",
+      });
+    }
+
+    const cancelledOrders = await tx
+      .update(ordersTable)
+      .set({ status: "CANCELLED", updatedAt: now })
+      .where(
+        and(
+          eq(ordersTable.marketId, marketId),
+          inArray(ordersTable.status, cancellableOrderStatuses),
+        ),
+      )
+      .returning({
+        id: ordersTable.id,
+        userId: ordersTable.userId,
+        side: ordersTable.side,
+        outcome: ordersTable.outcome,
+        price: ordersTable.price,
+        quantity: ordersTable.quantity,
+        filledQuantity: ordersTable.filledQuantity,
+      });
+    for (const order of cancelledOrders) {
+      const remainder = order.quantity - order.filledQuantity;
+      if (remainder <= 0) {
+        continue;
+      }
+      if (order.side === "BID") {
+        await releaseCash(order.userId, order.price * remainder);
+      } else {
+        await releaseShares(order.userId, order.outcome, remainder);
+      }
+    }
+
+    const [updated] = await tx
+      .update(marketsTable)
+      .set({
+        status,
+        outcome,
+        resolvedBy: adminId,
+        resolvedAt: now,
+        updatedAt: now,
+      })
+      .where(and(eq(marketsTable.id, marketId), inArray(marketsTable.status, resolvableStatuses)))
+      .returning();
+    if (!updated) {
+      throw new AppError("market cannot be resolved in current state", 400);
+    }
+    return updated;
+  });
 };
 
 export const deleteMarket = async (marketId: string) => {
