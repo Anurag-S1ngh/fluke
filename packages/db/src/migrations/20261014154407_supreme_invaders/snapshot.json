@@ -2,9 +2,7 @@
   "version": "8",
   "dialect": "postgres",
   "id": "fa7f41d2-e686-4c7c-8bb3-b991a3633198",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "isRlsEnabled": false,
@@ -968,14 +966,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "ledger_user_id_users_id_fkey",
@@ -985,14 +979,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "resolved_by"
-      ],
+      "columns": ["resolved_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "markets_resolved_by_users_id_fkey",
@@ -1002,14 +992,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "orders_user_id_users_id_fkey",
@@ -1019,14 +1005,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "market_id"
-      ],
+      "columns": ["market_id"],
       "schemaTo": "public",
       "tableTo": "markets",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "orders_market_id_markets_id_fkey",
@@ -1036,14 +1018,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "positions_user_id_users_id_fkey",
@@ -1053,14 +1031,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "market_id"
-      ],
+      "columns": ["market_id"],
       "schemaTo": "public",
       "tableTo": "markets",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "positions_market_id_markets_id_fkey",
@@ -1070,14 +1044,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "ask_order_id"
-      ],
+      "columns": ["ask_order_id"],
       "schemaTo": "public",
       "tableTo": "orders",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "trades_ask_order_id_orders_id_fkey",
@@ -1087,14 +1057,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "bid_order_id"
-      ],
+      "columns": ["bid_order_id"],
       "schemaTo": "public",
       "tableTo": "orders",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "trades_bid_order_id_orders_id_fkey",
@@ -1104,14 +1070,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "market_id"
-      ],
+      "columns": ["market_id"],
       "schemaTo": "public",
       "tableTo": "markets",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "trades_market_id_markets_id_fkey",
@@ -1120,9 +1082,7 @@
       "table": "trades"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "ledger_pkey",
       "schema": "public",
@@ -1130,9 +1090,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "markets_pkey",
       "schema": "public",
@@ -1140,9 +1098,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "orders_pkey",
       "schema": "public",
@@ -1150,9 +1106,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "positions_pkey",
       "schema": "public",
@@ -1160,9 +1114,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "trades_pkey",
       "schema": "public",
@@ -1170,9 +1122,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "users_pkey",
       "schema": "public",
@@ -1181,9 +1131,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "username"
-      ],
+      "columns": ["username"],
       "nullsNotDistinct": false,
       "name": "users_username_key",
       "schema": "public",
@@ -1192,9 +1140,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "email"
-      ],
+      "columns": ["email"],
       "nullsNotDistinct": false,
       "name": "users_email_key",
       "schema": "public",

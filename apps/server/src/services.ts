@@ -6,4 +6,4 @@ import { ENV } from "./env.server";
 
 export const db = createDb(ENV);
 export const redis = createRedisClient(ENV);
-export const email = createEmailClient(ENV);
+export const resend = createEmailClient(ENV);

@@ -1,12 +1,4 @@
-import {
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import {
   entryDirectionEnum,
@@ -25,9 +17,7 @@ export const usersTable = pgTable("users", {
   balance: integer("balance").notNull().default(0), // last two digits represent decimals (e.g. 12.05 -> 1205)
   role: roleEnum("role").notNull().default("USER"),
 
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull()
@@ -46,9 +36,7 @@ export const marketsTable = pgTable(
 
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull()
@@ -77,23 +65,14 @@ export const ordersTable = pgTable(
       .notNull(),
     status: orderStatusEnum("status").notNull().default("OPEN"),
 
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull()
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    index("orders_book_idx").on(
-      t.marketId,
-      t.outcome,
-      t.side,
-      t.status,
-      t.price,
-      t.createdAt,
-    ),
+    index("orders_book_idx").on(t.marketId, t.outcome, t.side, t.status, t.price, t.createdAt),
     index("orders_open_book_idx")
       .on(t.marketId, t.outcome, t.side, t.price)
       .where(sql`"status" in ('OPEN','PARTIALLY_FILLED')`),
@@ -118,9 +97,7 @@ export const tradesTable = pgTable(
     quantity: integer("quantity").notNull(),
     price: integer("price").notNull(), // last two digist represent decimals (e.g. 12.05 -> 1205)
 
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("trades_market_time_idx").on(t.marketId, t.createdAt.desc())],
 );
@@ -139,17 +116,9 @@ export const positionsTable = pgTable(
     outcome: outcomeEnum("outcome").notNull(),
     avgPrice: integer("avg_price").notNull(), // last two digist represent decimals
 
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [
-    uniqueIndex("positions_user_market_outcome_uidx").on(
-      t.userId,
-      t.marketId,
-      t.outcome,
-    ),
-  ],
+  (t) => [uniqueIndex("positions_user_market_outcome_uidx").on(t.userId, t.marketId, t.outcome)],
 );
 
 export const ledgerTable = pgTable(
@@ -163,9 +132,7 @@ export const ledgerTable = pgTable(
     amount: integer("amount").notNull(),
     entryDirection: entryDirectionEnum("entry_direction").notNull(),
 
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("ledger_user_time_idx").on(t.userId, t.createdAt.desc())],
 );

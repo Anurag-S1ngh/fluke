@@ -41,6 +41,7 @@
     "REDIS_URL",
     "RESEND_API_KEY",
     "EMAIL_FROM",
+    "JWT_SECRET",
     "NEXT_PUBLIC_SERVER_URL",
     "NODE_ENV",
     "VERCEL",
