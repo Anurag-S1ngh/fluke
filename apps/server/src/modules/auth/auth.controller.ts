@@ -1,20 +1,9 @@
 import type { Request, Response } from "express";
-import { z } from "zod";
 import { ENV } from "@/env.server";
-import { AppError } from "@/types/error";
 import { SESSION_COOKIE, SESSION_MAX_AGE_MS, signSessionToken } from "@/util/jwt";
+import { sendError } from "@/util/respond";
 import * as service from "./auth.service";
 import { SigninSchema, SignupSchema, VerifySchema } from "./auth.validation";
-
-const sendError = (res: Response, err: unknown) => {
-  if (err instanceof z.ZodError) {
-    return res.status(400).json({ error: err.issues });
-  }
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({ error: err.message });
-  }
-  return res.status(500).json({ error: "Internal server error" });
-};
 
 export const signup = async (req: Request, res: Response) => {
   try {
