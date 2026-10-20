@@ -88,7 +88,7 @@ const applyFill = async (
       target: [positionsTable.userId, positionsTable.marketId, positionsTable.outcome],
       set: {
         quantity: sql`${positionsTable.quantity} + ${qty}`,
-        avgPrice: sql`CAST(ROUND((${positionsTable.quantity} * ${positionsTable.avgPrice} + ${qty} * ${execPrice})::numeric / (${positionsTable.quantity} + ${qty}), 0) AS integer)`,
+        avgPrice: sql`CAST(ROUND((${positionsTable.quantity} * ${positionsTable.avgPrice} + ${qty}::numeric * ${execPrice}::numeric) / (${positionsTable.quantity} + ${qty}::numeric), 0) AS integer)`,
       },
     });
 
