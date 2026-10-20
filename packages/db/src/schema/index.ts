@@ -118,6 +118,7 @@ export const positionsTable = pgTable(
     reservedQuantity: integer("reserved_quantity").notNull().default(0),
     outcome: outcomeEnum("outcome").notNull(),
     avgPrice: integer("avg_price").notNull(), // last two digist represent decimals
+    settledAt: timestamp("settled_at", { withTimezone: true }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
