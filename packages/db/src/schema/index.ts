@@ -17,6 +17,7 @@ export const usersTable = pgTable("users", {
   balance: integer("balance").notNull().default(0), // last two digits represent decimals (e.g. 12.05 -> 1205)
   reservedBalance: integer("reserved_balance").notNull().default(0),
   role: roleEnum("role").notNull().default("USER"),
+  lastDailyGrantAt: timestamp("last_daily_grant_at", { withTimezone: true }),
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
