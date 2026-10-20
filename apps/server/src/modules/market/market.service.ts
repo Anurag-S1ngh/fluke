@@ -216,6 +216,11 @@ export const resolveMarket = async (
       }
     }
 
+    await tx
+      .update(positionsTable)
+      .set({ settledAt: now, reservedQuantity: 0 })
+      .where(eq(positionsTable.marketId, marketId));
+
     const [updated] = await tx
       .update(marketsTable)
       .set({

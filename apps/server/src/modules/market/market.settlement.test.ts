@@ -276,4 +276,71 @@ describe("resolveMarket settlement", () => {
     const ledgerRows = await db.select().from(ledgerTable);
     expect(ledgerRows).toHaveLength(0);
   });
+
+  test("resolved positions are stamped settled with final holdings intact", async () => {
+    const admin = await createUser();
+    const winner = await createUser();
+    const loser = await createUser();
+    const market = await createMarket();
+    await createPosition(winner.id, market.id, "YES", 80, 40);
+    await createPosition(loser.id, market.id, "NO", 50, 60);
+
+    await resolveMarket(market.id, { outcome: "YES" }, admin.id);
+
+    const rows = await db
+      .select()
+      .from(positionsTable)
+      .where(eq(positionsTable.marketId, market.id));
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      expect(row.settledAt).not.toBeNull();
+      expect(row.reservedQuantity).toBe(0);
+    }
+    const winnerRow = rows.find((r) => r.userId === winner.id);
+    expect(winnerRow).toMatchObject({ quantity: 80, avgPrice: 40, outcome: "YES" });
+    const live = await db
+      .select()
+      .from(positionsTable)
+      .where(eq(positionsTable.marketId, market.id));
+    expect(live.filter((r) => r.settledAt === null)).toHaveLength(0);
+  });
+
+  test("refund stamps positions settled without touching holdings", async () => {
+    const admin = await createUser();
+    const holder = await createUser();
+    const market = await createMarket();
+    await createPosition(holder.id, market.id, "YES", 80, 40);
+
+    await resolveMarket(market.id, { refund: true }, admin.id);
+
+    const [row] = await db
+      .select()
+      .from(positionsTable)
+      .where(eq(positionsTable.marketId, market.id));
+    expect(row).toMatchObject({ quantity: 80, avgPrice: 40 });
+    expect(row?.settledAt).not.toBeNull();
+  });
+
+  test("positions on other open markets stay live", async () => {
+    const admin = await createUser();
+    const holder = await createUser();
+    const closing = await createMarket();
+    const open = await createMarket();
+    await createPosition(holder.id, closing.id, "YES", 10, 50);
+    await createPosition(holder.id, open.id, "YES", 20, 60);
+
+    await resolveMarket(closing.id, { outcome: "YES" }, admin.id);
+
+    const [closedRow] = await db
+      .select()
+      .from(positionsTable)
+      .where(eq(positionsTable.marketId, closing.id));
+    const [openRow] = await db
+      .select()
+      .from(positionsTable)
+      .where(eq(positionsTable.marketId, open.id));
+    expect(closedRow?.settledAt).not.toBeNull();
+    expect(openRow?.settledAt).toBeNull();
+    expect(openRow?.quantity).toBe(20);
+  });
 });
