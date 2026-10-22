@@ -50,7 +50,6 @@ export default function AdminPage() {
 
   const min = React.useMemo(() => localDateTimeMin(), []);
   const list = markets.data?.markets ?? [];
-  const isAdmin = user?.role === "ADMIN";
 
   const createMarket = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -171,17 +170,6 @@ export default function AdminPage() {
           >
             <Link href={`/signin?next=${encodeURIComponent("/admin")}`} className={primaryAction}>
               Sign in
-            </Link>
-          </EmptyState>
-        </div>
-      ) : !isAdmin ? (
-        <div className="mx-auto max-w-7xl px-6 py-12">
-          <EmptyState
-            title="This desk is staff-only."
-            description="Your account can trade and hold positions, but it cannot create or resolve markets."
-          >
-            <Link href="/markets" className={secondaryAction}>
-              Back to markets
             </Link>
           </EmptyState>
         </div>

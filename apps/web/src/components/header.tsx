@@ -17,8 +17,7 @@ const baseLinks = [
 export default function Header() {
   const pathname = usePathname();
   const { user, loading, signOut } = useAuth();
-  const links: { href: Route; label: string }[] =
-    user?.role === "ADMIN" ? [...baseLinks, { href: "/admin", label: "Admin" }] : [...baseLinks];
+  const links: { href: Route; label: string }[] = [...baseLinks];
   const redirect = pathname === "/signin" || pathname === "/signup" ? null : pathname;
   const authHref = (base: "/signin" | "/signup") =>
     (redirect ? `${base}?next=${encodeURIComponent(redirect)}` : base) as Route;

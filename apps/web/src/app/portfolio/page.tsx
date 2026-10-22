@@ -96,10 +96,9 @@ export default function PortfolioPage() {
         </div>
       ) : (
         <div className="mx-auto max-w-7xl space-y-12 px-6 py-10">
-          <dl className="grid grid-cols-2 gap-px border-2 border-foreground bg-border sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-px border-2 border-foreground bg-border sm:grid-cols-3">
             {[
               { label: "Cash available", value: formatMoney(user.balance) },
-              { label: "Locked in orders", value: formatMoney(user.reservedBalance) },
               { label: "Open positions", value: String(live.length) },
               { label: "At cost", value: formatMoney(costBasis) },
             ].map((item) => (

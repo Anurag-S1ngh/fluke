@@ -2,15 +2,11 @@ export type Outcome = "YES" | "NO";
 export type Side = "BID" | "ASK";
 export type MarketStatus = "DRAFT" | "OPEN" | "CLOSED" | "RESOLVED" | "REFUND";
 export type OrderStatus = "OPEN" | "PARTIALLY_FILLED" | "FILLED" | "CANCELLED";
-export type Role = "ADMIN" | "USER";
-
 export interface Me {
   id: string;
   username: string;
   email: string;
   balance: number;
-  reservedBalance: number;
-  role: Role;
 }
 
 export interface MarketSummary {
