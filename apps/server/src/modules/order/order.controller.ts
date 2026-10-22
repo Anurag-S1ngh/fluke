@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { sendError } from "@/util/respond";
 import * as service from "./order.service";
-import { ListOrdersQuery, OrderIdParam, PlaceOrderSchema } from "./order.validation";
+import { BookQuery, ListOrdersQuery, OrderIdParam, PlaceOrderSchema } from "./order.validation";
 
 export const place = async (req: Request, res: Response) => {
   try {
@@ -37,6 +37,16 @@ export const listMine = async (req: Request, res: Response) => {
     }
     const orders = await service.listMyOrders(req.userId, marketId);
     return res.status(200).json({ orders });
+  } catch (err) {
+    return sendError(res, err);
+  }
+};
+
+export const book = async (req: Request, res: Response) => {
+  try {
+    const { marketId } = BookQuery.parse(req.query);
+    const orders = await service.getOrderBook(marketId);
+    return res.status(200).json({ book: orders });
   } catch (err) {
     return sendError(res, err);
   }

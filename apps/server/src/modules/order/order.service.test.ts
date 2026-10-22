@@ -11,7 +11,7 @@ import {
   usersTable,
 } from "@fluke/db/schema/index";
 import { assertTestDatabase, resetDatabase } from "@/test/db";
-import { cancelOrder, listMyOrders, placeOrder } from "./order.service";
+import { cancelOrder, getOrderBook, listMyOrders, placeOrder } from "./order.service";
 
 beforeAll(assertTestDatabase);
 beforeEach(resetDatabase);
@@ -524,5 +524,59 @@ describe("listMyOrders", () => {
     expect(await listMyOrders(alice.id)).toHaveLength(2);
     expect(await listMyOrders(alice.id, marketA.id)).toHaveLength(1);
     expect(await listMyOrders(bob.id)).toHaveLength(1);
+  });
+});
+
+describe("getOrderBook", () => {
+  test("aggregates resting quantity by outcome, side, and price", async () => {
+    const alice = await createUser(100_000);
+    const bob = await createUser(100_000);
+    const market = await createMarket();
+    await placeOrder(alice.id, {
+      marketId: market.id,
+      side: "BID",
+      outcome: "YES",
+      price: 60,
+      quantity: 10,
+    });
+    await placeOrder(bob.id, {
+      marketId: market.id,
+      side: "BID",
+      outcome: "YES",
+      price: 60,
+      quantity: 5,
+    });
+    await createPosition(alice.id, market.id, "NO", 10, 40);
+    await placeOrder(alice.id, {
+      marketId: market.id,
+      side: "ASK",
+      outcome: "NO",
+      price: 40,
+      quantity: 6,
+    });
+
+    const book = await getOrderBook(market.id);
+
+    expect(book).toEqual(
+      expect.arrayContaining([
+        { side: "BID", outcome: "YES", price: 60, quantity: 15 },
+        { side: "ASK", outcome: "NO", price: 40, quantity: 6 },
+      ]),
+    );
+  });
+
+  test("excludes filled and cancelled orders", async () => {
+    const alice = await createUser(100_000);
+    const market = await createMarket();
+    const order = await placeOrder(alice.id, {
+      marketId: market.id,
+      side: "BID",
+      outcome: "YES",
+      price: 60,
+      quantity: 10,
+    });
+    await cancelOrder(alice.id, order.id);
+
+    expect(await getOrderBook(market.id)).toEqual([]);
   });
 });

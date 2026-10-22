@@ -6,7 +6,14 @@ import { AppError } from "@/types/error";
 import { get, set } from "@fluke/redis";
 import { ledgerTable, usersTable } from "@fluke/db/schema/index";
 import { assertTestDatabase, resetDatabase } from "@/test/db";
-import { DAILY_GRANT_AMOUNT, me, signin, signup, startOfTodayUTC, verify } from "./auth.service";
+import {
+  DAILY_GRANT_AMOUNT,
+  me,
+  signin,
+  signup,
+  startOfTodayUTC,
+  verify,
+} from "./auth.service";
 
 let emailShouldFail = false;
 mock.module("@fluke/email", () => ({
@@ -46,7 +53,11 @@ const readOtp = async (email: string) => {
 };
 
 const userRow = async (email: string) => {
-  const [row] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+  const [row] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
   return row;
 };
 
@@ -70,7 +81,9 @@ describe("signup", () => {
 
   test("duplicate email throws 400 and writes no OTP", async () => {
     const { email } = nextIdentity();
-    await db.insert(usersTable).values({ username: "taken", email, balance: 0 });
+    await db
+      .insert(usersTable)
+      .values({ username: "taken", email, balance: 0 });
 
     const err = await signup("freshname", email).catch((e: unknown) => e);
 
@@ -129,7 +142,8 @@ describe("verify", () => {
     const { username, email } = nextIdentity();
     await signup(username, email);
     const realOtp = await readOtp(email);
-    const wrongOtp = realOtp[0] === "0" ? `1${realOtp.slice(1)}` : `0${realOtp.slice(1)}`;
+    const wrongOtp =
+      realOtp[0] === "0" ? `1${realOtp.slice(1)}` : `0${realOtp.slice(1)}`;
 
     const err = await verify(email, wrongOtp).catch((e: unknown) => e);
 
@@ -139,7 +153,9 @@ describe("verify", () => {
   });
 
   test("missing OTP key throws 400", async () => {
-    const err = await verify("nobody@test.fluke", "123456").catch((e: unknown) => e);
+    const err = await verify("nobody@test.fluke", "123456").catch(
+      (e: unknown) => e,
+    );
 
     expect(err).toBeInstanceOf(AppError);
     expect(err).toMatchObject({ statusCode: 400 });
@@ -205,7 +221,11 @@ describe("me", () => {
 
     const found = await me(user.id);
 
-    expect(found).toMatchObject({ id: user.id, username, email });
+    expect(found).toMatchObject({
+      id: user.id,
+      username,
+      email,
+    });
   });
 
   test("unknown id throws 400", async () => {

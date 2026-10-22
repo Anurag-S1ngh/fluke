@@ -3,6 +3,7 @@ import { db } from "@/services";
 import { AppError } from "@/types/error";
 import {
   ledgerTable,
+  marketsTable,
   ordersTable,
   positionsTable,
   tradesTable,
@@ -338,5 +339,44 @@ export const listMyOrders = async (userId: string, marketId?: string) => {
   const conditions = marketId
     ? and(eq(ordersTable.userId, userId), eq(ordersTable.marketId, marketId))
     : eq(ordersTable.userId, userId);
-  return db.select().from(ordersTable).where(conditions).orderBy(desc(ordersTable.createdAt));
+  return db
+    .select({
+      id: ordersTable.id,
+      userId: ordersTable.userId,
+      marketId: ordersTable.marketId,
+      question: marketsTable.question,
+      side: ordersTable.side,
+      outcome: ordersTable.outcome,
+      price: ordersTable.price,
+      quantity: ordersTable.quantity,
+      filledQuantity: ordersTable.filledQuantity,
+      status: ordersTable.status,
+      createdAt: ordersTable.createdAt,
+      updatedAt: ordersTable.updatedAt,
+    })
+    .from(ordersTable)
+    .innerJoin(marketsTable, eq(ordersTable.marketId, marketsTable.id))
+    .where(conditions)
+    .orderBy(desc(ordersTable.createdAt));
+};
+
+export const getOrderBook = async (marketId: string) => {
+  return db
+    .select({
+      side: ordersTable.side,
+      outcome: ordersTable.outcome,
+      price: ordersTable.price,
+      quantity: sql<number>`sum(${ordersTable.quantity} - ${ordersTable.filledQuantity})`.mapWith(
+        Number,
+      ),
+    })
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.marketId, marketId),
+        inArray(ordersTable.status, ["OPEN", "PARTIALLY_FILLED"]),
+      ),
+    )
+    .groupBy(ordersTable.side, ordersTable.outcome, ordersTable.price)
+    .orderBy(desc(ordersTable.price));
 };

@@ -16,7 +16,11 @@ export const startOfTodayUTC = (now: Date = new Date()) =>
 export const signup = async (username: string, email: string) => {
   const [[byEmail], [byUsername]] = await Promise.all([
     db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1),
-    db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1),
+    db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.username, username))
+      .limit(1),
   ]);
   if (byEmail) {
     throw new AppError("user with this email already exists", 400);
@@ -37,7 +41,10 @@ export const signup = async (username: string, email: string) => {
   }
 };
 
-export const verify = async (email: string, userOTP: string): Promise<{ user: AuthUser }> => {
+export const verify = async (
+  email: string,
+  userOTP: string,
+): Promise<{ user: AuthUser }> => {
   const key = "otp:" + email;
   const value = await get(redis, key);
   if (!value) {
@@ -95,7 +102,10 @@ export const verify = async (email: string, userOTP: string): Promise<{ user: Au
       if (!existing) {
         throw new AppError("user does not exist", 400);
       }
-      if (!existing.lastDailyGrantAt || existing.lastDailyGrantAt < todayStart) {
+      if (
+        !existing.lastDailyGrantAt ||
+        existing.lastDailyGrantAt < todayStart
+      ) {
         const [updated] = await tx
           .update(usersTable)
           .set({
@@ -137,7 +147,11 @@ export const verify = async (email: string, userOTP: string): Promise<{ user: Au
 };
 
 export const signin = async (email: string) => {
-  const [byEmail] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+  const [byEmail] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
   if (!byEmail) {
     throw new AppError("user does not exist", 400);
   }

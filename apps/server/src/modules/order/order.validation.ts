@@ -21,3 +21,7 @@ export const OrderIdParam = z.object({
 export const ListOrdersQuery = z.object({
   marketId: z.uuid("invalid market id").optional(),
 });
+
+export const BookQuery = z.object({
+  marketId: z.uuid("invalid market id"),
+});
