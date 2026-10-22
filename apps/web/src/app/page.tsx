@@ -1,14 +1,9 @@
-import { ArrowRight, ArrowUp } from "lucide-react";
+import { cn } from "@fluke/ui/lib/utils";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-const tape = [
-  { name: "Mars 2030", price: "62¢", move: "▲ 4" },
-  { name: "Fusion net", price: "18¢", move: "▲ 2" },
-  { name: "AI moratorium", price: "41¢", move: "▼ 3" },
-  { name: "Moon base", price: "09¢", move: "▼ 1" },
-  { name: "Open source", price: "74¢", move: "▲ 6" },
-  { name: "Sea level", price: "55¢", move: "▲ 1" },
-];
+import { AsciiWaves } from "@/components/ascii-waves";
+import { primaryAction, SectionMark, textAction } from "@/components/ui-bits";
 
 const steps = [
   {
@@ -37,155 +32,103 @@ const terms = [
   { term: "Counterparty", value: "another reader" },
 ];
 
-function SectionMark({ n, children }: { n: string; children: React.ReactNode }) {
-  return (
-    <p className="flex items-center gap-3 font-mono text-[10px] tracking-[0.2em] uppercase">
-      <span className="bg-signal px-1.5 py-0.5 text-background">{n}</span>
-      <span className="text-muted-foreground">{children}</span>
-    </p>
-  );
-}
+const features = [
+  {
+    title: "Skin in the game",
+    body: "Polls record what people say. Prices record what they will back with money — a harder signal to fake.",
+  },
+  {
+    title: "One number",
+    body: "No pundit panel, no thread to decode. The price is the forecast, updated on every trade.",
+  },
+  {
+    title: "Settled in public",
+    body: "Each question states its source and date up front. If it cannot resolve as written, everyone is refunded.",
+  },
+];
+
+const faqs = [
+  {
+    q: "What happens if I am right?",
+    a: "Each winning share pays $1.00. A share bought at 64¢ returns $1.00 — the difference is your gain.",
+  },
+  {
+    q: "When do I get paid?",
+    a: "After the question closes and resolves. Losing shares expire worthless; winning shares settle to cash.",
+  },
+  {
+    q: "Who am I trading against?",
+    a: "Another reader on the other side of the question. There is no house position and no hidden spread.",
+  },
+  {
+    q: "What if a question is unclear?",
+    a: "If it cannot be resolved as written, every position is refunded in full. No judgment calls, no haircuts.",
+  },
+];
 
 export default function Home() {
   return (
     <main id="top" className="h-full overflow-y-auto selection:bg-signal selection:text-background">
-      <div className="border-b border-foreground bg-foreground text-background">
-        <div className="mx-auto flex max-w-7xl items-stretch">
-          <span className="hidden shrink-0 items-center border-r border-background/25 px-4 font-mono text-[10px] tracking-[0.2em] uppercase sm:flex">
-            Sample tape
-          </span>
-          <div className="relative flex-1 overflow-hidden py-2">
-            <div
-              aria-hidden="true"
-              className="flex w-max animate-[ticker_40s_linear_infinite] motion-reduce:animate-none"
-            >
-              {[0, 1].map((copy) => (
-                <div key={copy} className="flex shrink-0">
-                  {tape.map(({ name, price, move }) => (
-                    <span
-                      key={`${copy}-${name}`}
-                      className="flex items-center gap-3 px-5 font-mono text-[11px] tracking-[0.12em] whitespace-nowrap uppercase"
-                    >
-                      <span>{name}</span>
-                      <span className="opacity-40">/</span>
-                      <span>{price}</span>
-                      <span className="opacity-60">{move}</span>
-                    </span>
-                  ))}
-                </div>
-              ))}
+      <section className="relative isolate -mb-px overflow-hidden border-b-2 border-[#2036ff] bg-[#2036ff] text-white selection:bg-white selection:text-[#2036ff]">
+        <AsciiWaves />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 md:hidden"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(32,54,255,0.88) 0%, rgba(32,54,255,0.72) 32%, rgba(32,54,255,0.42) 62%, rgba(32,54,255,0.12) 85%, rgba(32,54,255,0) 100%)",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 hidden md:block"
+          style={{
+            background:
+              "radial-gradient(ellipse 120% 105% at 50% 42%, rgba(32,54,255,0.78) 0%, rgba(32,54,255,0.62) 32%, rgba(32,54,255,0.32) 58%, rgba(32,54,255,0.08) 80%, rgba(32,54,255,0) 100%)",
+          }}
+        />
+
+        <div className="relative mx-auto flex min-h-svh w-full max-w-7xl items-center justify-center px-6 pt-28 pb-16 text-center lg:pt-32 lg:pb-20">
+          <div className="mx-auto flex max-w-3xl flex-col items-center">
+            <h1 className="max-w-3xl font-serif text-[clamp(3.25rem,6vw,6rem)] leading-[0.92] tracking-[-0.02em] text-balance">
+              Tomorrow, <em className="text-white/70">priced</em> in cents.
+            </h1>
+
+            <p className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+              A prediction market for real-world outcomes. Buy YES or NO on a question, and let the
+              price say what everyone believes.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+              <Link
+                href="/markets"
+                className={cn(
+                  primaryAction,
+                  "h-11 border-white bg-white px-6 text-xs text-[#2036ff] hover:bg-white/90 hover:text-[#2036ff]",
+                )}
+              >
+                Browse markets
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+              <Link
+                href="#how-it-works"
+                className={cn(textAction, "text-white/80 hover:text-white")}
+              >
+                How it works
+              </Link>
             </div>
           </div>
         </div>
-      </div>
-
-      <section className="mx-auto grid max-w-7xl gap-14 px-6 pt-12 pb-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-16 lg:pt-16 lg:pb-24">
-        <div>
-          <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] uppercase">
-            <span aria-hidden="true" className="size-2 bg-signal" />
-            The future, quoted daily
-          </p>
-
-          <h1 className="mt-6 font-serif text-[clamp(3.25rem,7.5vw,6.5rem)] leading-[0.95] tracking-[-0.02em] text-balance">
-            Tomorrow, <em className="text-signal">priced</em> in cents.
-          </h1>
-
-          <p className="mt-7 max-w-[46ch] text-base leading-relaxed text-muted-foreground sm:text-lg">
-            fluke is a prediction market for real-world outcomes. Buy YES or NO on a question, and
-            let the price say what everyone believes.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-6">
-            <Link
-              href="#how-it-works"
-              className="inline-flex h-11 items-center gap-3 border-2 border-foreground bg-foreground px-5 font-mono text-[11px] tracking-[0.18em] text-background uppercase transition-colors hover:bg-background hover:text-foreground"
-            >
-              Read the tape
-              <ArrowRight aria-hidden="true" className="size-4" />
-            </Link>
-            <Link
-              href="#the-rules"
-              className="font-mono text-[11px] tracking-[0.18em] uppercase underline decoration-1 underline-offset-4 hover:text-signal"
-            >
-              How it settles
-            </Link>
-          </div>
-
-          <dl className="mt-12 grid max-w-lg grid-cols-3 gap-4 border-t-2 border-foreground pt-4 font-mono text-[10px] tracking-[0.12em] uppercase">
-            <div>
-              <dt className="text-muted-foreground">One share</dt>
-              <dd className="mt-1 text-sm">$1.00</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Fees</dt>
-              <dd className="mt-1 text-sm">None</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Counterparty</dt>
-              <dd className="mt-1 text-sm">A reader</dd>
-            </div>
-          </dl>
-        </div>
-
-        <aside className="relative lg:mt-2">
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 translate-x-3 translate-y-3 border border-foreground/40"
-          />
-          <article className="relative border-2 border-foreground bg-card p-5 sm:p-6">
-            <div className="flex items-center justify-between border-b border-border pb-3 font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-              <span>Specimen front page</span>
-              <span>No. 001</span>
-            </div>
-
-            <p className="mt-5 font-serif text-3xl leading-[1.05] tracking-[-0.01em]">
-              Will humans land on Mars before 2030?
-            </p>
-
-            <div className="mt-6 flex items-end justify-between gap-4">
-              <div>
-                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-                  Yes, per share
-                </p>
-                <p className="mt-1 font-mono text-6xl leading-none tracking-[-0.05em]">62¢</p>
-              </div>
-              <p className="pb-1 font-mono text-[11px] tracking-[0.12em] text-signal uppercase">
-                ▲ 4¢ today
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex h-3 w-full overflow-hidden border border-foreground">
-                <div className="w-[62%] bg-signal" />
-                <div className="flex-1 bg-foreground" />
-              </div>
-              <div className="mt-2 flex justify-between font-mono text-[10px] tracking-[0.14em] uppercase">
-                <span>Yes 62</span>
-                <span className="text-muted-foreground">No 38</span>
-              </div>
-            </div>
-
-            <p className="mt-6 border-t border-border pt-3 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
-              Volume 12,480 · closes Jan 2030
-            </p>
-
-            <span className="absolute -top-3 -right-3 rotate-6 border-2 border-signal bg-card px-2 py-1 font-mono text-[9px] tracking-[0.2em] text-signal uppercase">
-              Illustrative
-            </span>
-          </article>
-        </aside>
       </section>
 
-      <section id="how-it-works" className="scroll-mt-24 border-t-2 border-foreground">
-        <div className="mx-auto max-w-7xl px-6 py-14 sm:py-20">
-          <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <SectionMark n="01">How it works</SectionMark>
-              <h2 className="mt-4 font-serif text-3xl leading-tight tracking-[-0.01em] sm:text-4xl">
-                Three moves, one opinion.
-              </h2>
-            </div>
-            <p className="max-w-[34ch] text-sm leading-relaxed text-muted-foreground">
+      <section id="how-it-works" className="scroll-mt-24 border-b-2 border-foreground">
+        <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
+          <div className="flex flex-col items-center gap-4 border-b border-border pb-8 text-center">
+            <SectionMark n="01">How it works</SectionMark>
+            <h2 className="mt-2 font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
+              Three moves, one opinion.
+            </h2>
+            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
               No leverage, no derivatives, no jargon. Just a question, a price, and a date.
             </p>
           </div>
@@ -202,28 +145,101 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-y-2 border-foreground bg-signal text-background">
+      <section id="example" className="scroll-mt-24 border-b-2 border-foreground">
+        <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <SectionMark n="02">An example</SectionMark>
+            <h2 className="mt-2 max-w-xl font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
+              One question, two prices.
+            </h2>
+            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+              The market below is illustrative. The split is the forecast — it moves with every
+              trade.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-16 max-w-3xl border-2 border-foreground">
+            <div className="border-b border-border px-6 py-4">
+              <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                Open · Closes on stated date
+              </p>
+              <p className="mt-2 font-serif text-2xl leading-tight text-balance sm:text-3xl">
+                Will the city break its all-time heat record this summer?
+              </p>
+            </div>
+            <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
+              <div className="border border-border p-4">
+                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                  YES
+                </p>
+                <p className="mt-1 font-mono text-3xl">64¢</p>
+                <div
+                  className="mt-3 h-2 bg-muted"
+                  role="img"
+                  aria-label="YES priced at 64 cents"
+                >
+                  <div className="h-full w-[64%] bg-signal" />
+                </div>
+              </div>
+              <div className="border border-border p-4">
+                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                  NO
+                </p>
+                <p className="mt-1 font-mono text-3xl">36¢</p>
+                <div className="mt-3 h-2 bg-muted" role="img" aria-label="NO priced at 36 cents">
+                  <div className="h-full w-[36%] bg-foreground" />
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 border-t border-border px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Last trade says: <span className="text-foreground">likely yes, far from sure.</span>
+              </p>
+              <Link href="/markets" className={cn(primaryAction, "h-10 px-5 text-[11px]")}>
+                Trade this idea
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b-2 border-foreground">
+        <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <SectionMark n="03">Why prices</SectionMark>
+            <h2 className="mt-2 max-w-xl font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
+              Opinions are cheap. Prices aren&apos;t.
+            </h2>
+          </div>
+
+          <div className="mx-auto mt-16 grid max-w-5xl gap-px border-2 border-foreground bg-border sm:grid-cols-3">
+            {features.map(({ title, body }) => (
+              <div key={title} className="bg-background px-8 py-12 sm:py-16">
+                <h3 className="font-serif text-2xl">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden border-b-2 border-foreground bg-signal text-background">
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] text-background opacity-20 [background-size:6px_6px]"
         />
-        <div className="relative mx-auto max-w-4xl px-6 py-16 text-center sm:py-24">
-          <p className="font-mono text-[10px] tracking-[0.24em] uppercase">
-            From the editorial desk
-          </p>
-          <blockquote className="mt-6 font-serif text-[clamp(2rem,5vw,3.75rem)] leading-[1.05] text-balance">
+        <div className="relative mx-auto max-w-4xl px-6 py-32 text-center sm:py-44">
+          <blockquote className="font-serif text-[clamp(2rem,5vw,3.75rem)] leading-[1.05] text-balance">
             “A price is an opinion that has <em>skin in the game</em>.”
           </blockquote>
-          <p className="mt-6 font-mono text-[10px] tracking-[0.2em] uppercase">
-            — The fluke principle
-          </p>
         </div>
       </section>
 
       <section id="the-rules" className="scroll-mt-24 border-b-2 border-foreground">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-28 sm:py-36 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
           <div>
-            <SectionMark n="02">The rules</SectionMark>
+            <SectionMark n="04">The rules</SectionMark>
             <h2 className="mt-4 font-serif text-4xl leading-[1.02] tracking-[-0.01em] text-balance sm:text-5xl">
               Plain terms, printed clearly.
             </h2>
@@ -231,7 +247,6 @@ export default function Home() {
               No hidden spread, no house on the other side, no fine print in a modal. The whole
               contract fits on one page.
             </p>
-
             <p className="mt-8 max-w-[38ch] border-l-2 border-signal pl-4 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-muted-foreground uppercase">
               If a question cannot be resolved as written, every position is refunded in full.
             </p>
@@ -253,17 +268,45 @@ export default function Home() {
         </div>
       </section>
 
+      <section id="faq" className="scroll-mt-24 border-b-2 border-foreground">
+        <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <SectionMark n="05">Questions</SectionMark>
+            <h2 className="mt-2 font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
+              What everyone asks first.
+            </h2>
+          </div>
+
+          <div className="mx-auto mt-16 max-w-3xl divide-y divide-border">
+            {faqs.map(({ q, a }, index) => (
+              <details key={q} open={index === 0} className="group bg-background">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 [&::-webkit-details-marker]:hidden">
+                  <span className="font-serif text-xl leading-snug group-hover:text-signal">
+                    {q}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="font-mono text-lg leading-none text-muted-foreground group-hover:text-signal"
+                  >
+                    <span className="group-open:hidden">+</span>
+                    <span className="hidden group-open:inline">−</span>
+                  </span>
+                </summary>
+                <p className="px-6 pb-6 text-sm leading-relaxed text-muted-foreground">{a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <footer className="mx-auto max-w-7xl px-6 pb-10">
-        <div className="flex flex-col gap-6 py-10 sm:flex-row sm:items-end sm:justify-between">
-          <p className="max-w-[24ch] font-serif text-2xl leading-tight tracking-[-0.01em] text-balance sm:text-3xl">
-            The first markets are on their way.
+        <div className="flex flex-col items-center gap-6 py-28 text-center sm:py-36">
+          <p className="max-w-[22ch] font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
+            Put your conviction where the price is.
           </p>
-          <Link
-            href="#top"
-            className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] uppercase underline decoration-1 underline-offset-4 hover:text-signal"
-          >
-            Back to top
-            <ArrowUp aria-hidden="true" className="size-3.5" />
+          <Link href="/markets" className={cn(primaryAction, "h-11 px-6 text-xs")}>
+            Browse markets
+            <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         </div>
 
@@ -273,9 +316,79 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 pt-5 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} fluke — printed continuously in your browser</span>
-          <span>Vol. I · No. 001 · prices in cents</span>
+        <div className="grid gap-10 py-10 lg:grid-cols-[1fr_auto] lg:gap-24">
+          <div>
+            <p className="max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
+              A prediction market for real-world outcomes. YES pays $1.00, NO pays $0.00 — the
+              price is the forecast.
+            </p>
+            <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+              © {new Date().getFullYear()} fluke
+            </p>
+          </div>
+
+          <div className="grid w-fit gap-10 sm:grid-cols-[auto_auto] sm:justify-end sm:gap-16 lg:justify-self-end lg:gap-24">
+              <nav aria-label="Socials">
+                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                  Socials
+                </p>
+                <ul className="mt-3 space-y-2">
+                  <li>
+                    <a href="#" className="text-sm hover:text-signal">
+                      X
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-sm hover:text-signal">
+                      Discord
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-sm hover:text-signal">
+                      GitHub
+                    </a>
+                  </li>
+                </ul>
+              </nav>
+
+              <nav aria-label="Pages">
+                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                  Pages
+                </p>
+                <ul className="mt-3 space-y-2">
+                  <li>
+                    <Link href="/markets" className="text-sm hover:text-signal">
+                      Markets
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/portfolio" className="text-sm hover:text-signal">
+                      Portfolio
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#how-it-works" className="text-sm hover:text-signal">
+                      How it works
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#example" className="text-sm hover:text-signal">
+                      An example
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#the-rules" className="text-sm hover:text-signal">
+                      The rules
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#faq" className="text-sm hover:text-signal">
+                      Questions
+                    </Link>
+                  </li>
+                </ul>
+              </nav>
+            </div>
         </div>
       </footer>
     </main>
