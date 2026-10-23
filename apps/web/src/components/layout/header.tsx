@@ -78,7 +78,7 @@ export default function Header() {
           })}
         </nav>
 
-        <div className="flex w-full items-center justify-end gap-6 font-sans text-sm font-medium tracking-[0.06em] capitalize sm:w-auto sm:justify-start">
+        <div className="flex w-full items-center justify-end gap-6 font-sans text-sm font-medium tracking-[0.06em] sm:w-auto sm:justify-start">
           {loading ? (
             <span className={overlay ? "text-white/70" : "text-muted-foreground"}>···</span>
           ) : user ? (
