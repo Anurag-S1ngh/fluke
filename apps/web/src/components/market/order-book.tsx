@@ -11,7 +11,7 @@ function levelsFor(book: BookLevel[], outcome: Outcome, side: Side) {
 function PriceRows({ levels, side, empty }: { levels: BookLevel[]; side: Side; empty: string }) {
   if (levels.length === 0) {
     return (
-      <p className="px-4 py-3 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+      <p className="px-4 py-3 font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
         {empty}
       </p>
     );
@@ -48,19 +48,19 @@ function BookSide({ outcome, book }: { outcome: Outcome; book: BookLevel[] }) {
     <div>
       <div className="flex items-baseline justify-between gap-4 border-b border-border px-4 py-3">
         <h3 className="font-serif text-2xl leading-none">{outcome}</h3>
-        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
           {bids[0] ? `Bid ${formatPrice(bids[0].price)}` : "No bid"}
           <span className="px-1.5">/</span>
           {asks[0] ? `Ask ${formatPrice(asks[0].price)}` : "No ask"}
         </p>
       </div>
 
-      <p className="border-b border-border/60 px-4 pt-3 pb-1 font-mono text-[9px] tracking-[0.16em] text-muted-foreground uppercase">
+      <p className="border-b border-border/60 px-4 pt-3 pb-1 font-mono text-[9px] tracking-[0.16em] text-muted-foreground">
         Asks
       </p>
       <PriceRows levels={asks} side="ASK" empty="No shares offered." />
 
-      <p className="border-y border-border/60 px-4 pt-3 pb-1 font-mono text-[9px] tracking-[0.16em] text-muted-foreground uppercase">
+      <p className="border-y border-border/60 px-4 pt-3 pb-1 font-mono text-[9px] tracking-[0.16em] text-muted-foreground">
         Bids
       </p>
       <PriceRows levels={bids} side="BID" empty="No bids resting." />
@@ -72,8 +72,8 @@ export function OrderBook({ book, loading }: { book: BookLevel[]; loading: boole
   return (
     <section className="border-2 border-foreground">
       <header className="flex items-baseline justify-between gap-4 border-b-2 border-foreground px-4 py-3">
-        <h2 className="font-mono text-[10px] tracking-[0.18em] uppercase">Order book</h2>
-        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+        <h2 className="font-mono text-[10px] tracking-[0.18em]">Order book</h2>
+        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
           {loading ? "Reading" : "Resting orders"}
         </p>
       </header>

@@ -11,9 +11,7 @@ const pages: { href: Route; label: string }[] = [
 function SocialLinks() {
   return (
     <nav aria-label="Socials">
-      <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-        Socials
-      </p>
+      <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">Socials</p>
       <ul className="mt-3 space-y-2">
         {socials.map((label) => (
           <li key={label}>
@@ -30,9 +28,7 @@ function SocialLinks() {
 function PageLinks({ landing }: { landing: boolean }) {
   return (
     <nav aria-label="Pages">
-      <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-        Pages
-      </p>
+      <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">Pages</p>
       <ul className="mt-3 space-y-2">
         {pages.map(({ href, label }) => (
           <li key={href}>
@@ -96,7 +92,7 @@ export function SiteFooter({ landing = false }: { landing?: boolean }) {
               A prediction market for real-world outcomes. YES pays $1.00, NO pays $0.00 — the price
               is the forecast.
             </p>
-            <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
               © {new Date().getFullYear()} fluke
             </p>
           </div>

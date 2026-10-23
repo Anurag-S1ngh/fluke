@@ -131,7 +131,7 @@ export function MarketView({ marketId }: { marketId: string }) {
         <div className="mx-auto max-w-7xl px-6 py-8 sm:py-12">
           <div className="flex flex-wrap items-center gap-3">
             <StatusTag status={data.status} />
-            <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+            <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
               {data.status === "OPEN" || data.status === "CLOSED"
                 ? `Closes ${formatDateTime(data.closesAt)}`
                 : `Filed ${formatDate(data.createdAt)}`}
@@ -147,16 +147,14 @@ export function MarketView({ marketId }: { marketId: string }) {
 
           {data.status === "RESOLVED" && data.outcome ? (
             <div className="mt-7 border-l-4 border-signal pl-4">
-              <p className="font-mono text-[10px] tracking-[0.16em] text-signal uppercase">
+              <p className="font-mono text-[10px] tracking-[0.16em] text-signal">
                 Resolved {data.outcome}
               </p>
               <p className="mt-1 font-serif text-2xl">Winning shares paid one dollar each.</p>
             </div>
           ) : data.status === "REFUND" ? (
             <div className="mt-7 border-l-4 border-signal pl-4">
-              <p className="font-mono text-[10px] tracking-[0.16em] text-signal uppercase">
-                Refunded
-              </p>
+              <p className="font-mono text-[10px] tracking-[0.16em] text-signal">Refunded</p>
               <p className="mt-1 font-serif text-2xl">Every position was returned in full.</p>
             </div>
           ) : null}
@@ -167,7 +165,7 @@ export function MarketView({ marketId }: { marketId: string }) {
         <aside className="space-y-6 lg:order-2 lg:sticky lg:top-6 lg:self-start">
           <OrderTicket market={data} best={best} shares={shares} onTraded={reloadTrading} />
           <section className="border border-border p-4">
-            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
               Settlement
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
@@ -183,7 +181,7 @@ export function MarketView({ marketId }: { marketId: string }) {
           {user ? (
             <section>
               <div className="mb-4 flex items-baseline justify-between gap-4">
-                <h2 className="font-mono text-[10px] tracking-[0.18em] uppercase">Your orders</h2>
+                <h2 className="font-mono text-[10px] tracking-[0.18em]">Your orders</h2>
                 <Link href="/portfolio" className={textAction}>
                   Portfolio
                 </Link>

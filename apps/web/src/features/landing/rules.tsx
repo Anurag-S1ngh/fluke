@@ -22,7 +22,7 @@ export function Rules() {
             No hidden spread, no house on the other side, no fine print in a modal. The whole
             contract fits on one page.
           </p>
-          <p className="mt-8 max-w-[38ch] border-l-2 border-signal pl-4 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="mt-8 max-w-[38ch] border-l-2 border-signal pl-4 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-muted-foreground">
             If a question cannot be resolved as written, every position is refunded in full.
           </p>
         </div>
@@ -33,7 +33,7 @@ export function Rules() {
               key={term}
               className="flex items-baseline justify-between gap-4 border-b border-border py-4"
             >
-              <dt className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+              <dt className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground">
                 {term}
               </dt>
               <dd className="font-mono text-sm">{value}</dd>

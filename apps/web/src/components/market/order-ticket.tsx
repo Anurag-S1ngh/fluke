@@ -64,7 +64,7 @@ export function OrderTicket({
     return (
       <section className="border-2 border-foreground">
         <header className="border-b-2 border-foreground px-4 py-3">
-          <h2 className="font-mono text-[10px] tracking-[0.18em] uppercase">Trade</h2>
+          <h2 className="font-mono text-[10px] tracking-[0.18em]">Trade</h2>
         </header>
         <div className="px-4 py-6">
           <p className="font-serif text-2xl">
@@ -88,7 +88,7 @@ export function OrderTicket({
     return (
       <section className="border-2 border-foreground">
         <header className="border-b-2 border-foreground px-4 py-3">
-          <h2 className="font-mono text-[10px] tracking-[0.18em] uppercase">Trade</h2>
+          <h2 className="font-mono text-[10px] tracking-[0.18em]">Trade</h2>
         </header>
         <div className="px-4 py-6">
           <p className="font-serif text-2xl">Take a side.</p>
@@ -97,7 +97,7 @@ export function OrderTicket({
           </p>
           <Link
             href={`/signin?next=${encodeURIComponent(`/markets/${market.id}`)}`}
-            className="mt-5 inline-flex h-10 items-center border-2 border-foreground bg-foreground px-4 font-mono text-[11px] tracking-[0.16em] text-background uppercase transition-colors hover:bg-background hover:text-foreground"
+            className="mt-5 inline-flex h-10 items-center border-2 border-foreground bg-foreground px-4 font-mono text-[11px] tracking-[0.16em] text-background transition-colors hover:bg-background hover:text-foreground"
           >
             Sign in to trade
           </Link>
@@ -141,8 +141,8 @@ export function OrderTicket({
   return (
     <section className="border-2 border-foreground">
       <header className="flex items-baseline justify-between gap-4 border-b-2 border-foreground px-4 py-3">
-        <h2 className="font-mono text-[10px] tracking-[0.18em] uppercase">Trade</h2>
-        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+        <h2 className="font-mono text-[10px] tracking-[0.18em]">Trade</h2>
+        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
           {formatMoney(user.balance)} available
         </p>
       </header>
@@ -160,9 +160,9 @@ export function OrderTicket({
                 className={
                   outcome === option
                     ? option === "YES"
-                      ? "bg-signal px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background uppercase"
-                      : "bg-foreground px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background uppercase"
-                    : "px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+                      ? "bg-signal px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background"
+                      : "bg-foreground px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background"
+                    : "px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
                 }
               >
                 {option}
@@ -182,8 +182,8 @@ export function OrderTicket({
                 aria-pressed={side === option}
                 className={
                   side === option
-                    ? "bg-foreground px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background uppercase"
-                    : "px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+                    ? "bg-foreground px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background"
+                    : "px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
                 }
               >
                 {option === "BID" ? "Buy" : "Sell"}
@@ -228,15 +228,13 @@ export function OrderTicket({
 
         <dl className="space-y-2 border-t border-border pt-4 font-mono text-[11px]">
           <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground uppercase">
+            <dt className="text-muted-foreground">
               {side === "BID" ? "Max cost" : "Min proceeds"}
             </dt>
             <dd>{formatMoney(total)}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground uppercase">
-              {side === "BID" ? "Price" : "Available"}
-            </dt>
+            <dt className="text-muted-foreground">{side === "BID" ? "Price" : "Available"}</dt>
             <dd>
               {side === "BID"
                 ? validPrice
@@ -248,13 +246,13 @@ export function OrderTicket({
         </dl>
 
         {reason ? (
-          <p className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive uppercase">
+          <p className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive">
             {reason}
           </p>
         ) : null}
 
         {error ? (
-          <p className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive uppercase">
+          <p className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive">
             {error}
           </p>
         ) : null}
@@ -262,7 +260,7 @@ export function OrderTicket({
         <button
           type="submit"
           disabled={disabled}
-          className="h-11 w-full border-2 border-foreground bg-foreground font-mono text-[11px] tracking-[0.18em] text-background uppercase transition-colors hover:bg-background hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          className="h-11 w-full border-2 border-foreground bg-foreground font-mono text-[11px] tracking-[0.18em] text-background transition-colors hover:bg-background hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
         >
           {busy ? "Working…" : `${side === "BID" ? "Buy" : "Sell"} ${outcome}`}
         </button>

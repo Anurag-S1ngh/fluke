@@ -114,7 +114,7 @@ export function PortfolioView() {
                     onClick={() => setTab(option.id)}
                     aria-pressed={tab === option.id}
                     className={cn(
-                      "border-2 px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] uppercase transition-colors",
+                      "border-2 px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] transition-colors",
                       tab === option.id
                         ? "border-foreground bg-foreground text-background"
                         : "border-transparent text-muted-foreground hover:text-foreground",
@@ -146,7 +146,7 @@ export function PortfolioView() {
 
           <section>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-              <h2 className="font-mono text-[10px] tracking-[0.18em] uppercase">Orders</h2>
+              <h2 className="font-mono text-[10px] tracking-[0.18em]">Orders</h2>
               {orders.error ? (
                 <button type="button" onClick={() => void orders.reload()} className={textAction}>
                   Retry orders

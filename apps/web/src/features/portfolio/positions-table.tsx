@@ -51,11 +51,7 @@ export function PositionsTable({
   if (error) {
     return (
       <EmptyState title="Could not read your positions." description={error}>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="font-mono text-[11px] uppercase underline"
-        >
+        <button type="button" onClick={onRetry} className="font-mono text-[11px] underline">
           Try again
         </button>
       </EmptyState>
@@ -73,7 +69,7 @@ export function PositionsTable({
         }
       >
         {tab === "live" ? (
-          <Link href="/markets" className="font-mono text-[11px] uppercase underline">
+          <Link href="/markets" className="font-mono text-[11px] underline">
             Find a question
           </Link>
         ) : null}
@@ -99,7 +95,7 @@ export function PositionsTable({
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border pt-3">
                 <div>
-                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground uppercase">
+                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground">
                     Side
                   </dt>
                   <dd className="mt-0.5 font-mono text-[11px]">
@@ -107,13 +103,13 @@ export function PositionsTable({
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground uppercase">
+                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground">
                     Avg price
                   </dt>
                   <dd className="mt-0.5 font-mono text-[11px]">{formatPrice(position.avgPrice)}</dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground uppercase">
+                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground">
                     {tab === "live" ? "At cost" : "Result"}
                   </dt>
                   <dd className="mt-0.5 font-mono text-[11px]">
@@ -125,7 +121,7 @@ export function PositionsTable({
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground uppercase">
+                  <dt className="font-mono text-[9px] tracking-[0.14em] text-muted-foreground">
                     {tab === "live" ? "Payout if right" : "Settled"}
                   </dt>
                   <dd className="mt-0.5 font-mono text-[11px]">
@@ -156,7 +152,7 @@ export function PositionsTable({
               ].map((heading) => (
                 <th
                   key={heading}
-                  className="px-3 py-2 font-mono text-[9px] font-normal tracking-[0.16em] text-muted-foreground uppercase"
+                  className="px-3 py-2 font-mono text-[9px] font-normal tracking-[0.16em] text-muted-foreground"
                 >
                   {heading}
                 </th>

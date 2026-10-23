@@ -34,7 +34,7 @@ export function AuthError({ children }: { children: React.ReactNode }) {
   return (
     <p
       role="alert"
-      className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive uppercase"
+      className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive"
     >
       {children}
     </p>

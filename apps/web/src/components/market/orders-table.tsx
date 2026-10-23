@@ -59,7 +59,7 @@ export function OrdersTable({
                   {order.side === "BID" ? "Buy" : "Sell"} {order.outcome} at{" "}
                   {formatPrice(order.price)}
                 </p>
-                <p className="mt-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground uppercase">
+                <p className="mt-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground">
                   {formatDate(order.createdAt)} · filled {order.filledQuantity}/{order.quantity}
                 </p>
               </div>
@@ -70,7 +70,7 @@ export function OrdersTable({
                 type="button"
                 onClick={() => onCancel(order)}
                 disabled={cancellingId === order.id}
-                className="mt-3 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase underline underline-offset-4 transition-colors hover:text-destructive disabled:opacity-40"
+                className="mt-3 font-mono text-[10px] tracking-[0.14em] text-muted-foreground underline underline-offset-4 transition-colors hover:text-destructive disabled:opacity-40"
               >
                 {cancellingId === order.id ? "Cancelling" : "Cancel order"}
               </button>
@@ -94,7 +94,7 @@ export function OrdersTable({
               ].map((heading) => (
                 <th
                   key={heading}
-                  className="px-3 py-2 font-mono text-[9px] font-normal tracking-[0.16em] text-muted-foreground uppercase"
+                  className="px-3 py-2 font-mono text-[9px] font-normal tracking-[0.16em] text-muted-foreground"
                 >
                   {heading}
                 </th>
@@ -135,7 +135,7 @@ export function OrdersTable({
                       type="button"
                       onClick={() => onCancel(order)}
                       disabled={cancellingId === order.id}
-                      className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase underline underline-offset-4 transition-colors hover:text-destructive disabled:opacity-40"
+                      className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground underline underline-offset-4 transition-colors hover:text-destructive disabled:opacity-40"
                     >
                       {cancellingId === order.id ? "Cancelling" : "Cancel"}
                     </button>

@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { StatusTag } from "@/components/ui/status-tag";
 import { api } from "@/lib/api";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, marketStatusLabel } from "@/lib/format";
 import type { MarketStatus, MarketSummary } from "@/lib/types";
 
 const statuses: MarketStatus[] = ["DRAFT", "OPEN", "CLOSED"];
@@ -109,15 +109,15 @@ export function AdminMarketList({
               aria-pressed={status === option}
               className={
                 status === option
-                  ? "border-2 border-foreground bg-foreground px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-background uppercase"
-                  : "border-2 border-transparent px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+                  ? "border-2 border-foreground bg-foreground px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-background"
+                  : "border-2 border-transparent px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
               }
             >
-              {option}
+              {marketStatusLabel[option]}
             </button>
           ))}
         </div>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
           {loading ? "Reading" : `${markets.length} ${markets.length === 1 ? "market" : "markets"}`}
         </p>
       </div>
@@ -149,7 +149,7 @@ export function AdminMarketList({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
                   <StatusTag status={market.status} />
-                  <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+                  <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
                     Closes {formatDateTime(market.closesAt)}
                   </span>
                 </div>
@@ -168,7 +168,7 @@ export function AdminMarketList({
                       type="button"
                       disabled={busyId === market.id}
                       onClick={() => void publishMarket(market)}
-                      className="border border-foreground px-3 py-1.5 font-mono text-[10px] tracking-[0.14em] uppercase transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+                      className="border border-foreground px-3 py-1.5 font-mono text-[10px] tracking-[0.14em] transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
                     >
                       Publish
                     </button>
@@ -176,7 +176,7 @@ export function AdminMarketList({
                       type="button"
                       disabled={busyId === market.id}
                       onClick={() => void deleteMarket(market)}
-                      className="px-2 py-1.5 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase underline underline-offset-4 transition-colors hover:text-destructive disabled:opacity-40"
+                      className="px-2 py-1.5 font-mono text-[10px] tracking-[0.14em] text-muted-foreground underline underline-offset-4 transition-colors hover:text-destructive disabled:opacity-40"
                     >
                       Delete
                     </button>
@@ -188,7 +188,7 @@ export function AdminMarketList({
                     type="button"
                     disabled={busyId === market.id}
                     onClick={() => void closeMarket(market)}
-                    className="border border-foreground px-3 py-1.5 font-mono text-[10px] tracking-[0.14em] uppercase transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+                    className="border border-foreground px-3 py-1.5 font-mono text-[10px] tracking-[0.14em] transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
                   >
                     Close book
                   </button>
@@ -204,7 +204,7 @@ export function AdminMarketList({
                           [market.id]: event.target.value,
                         }))
                       }
-                      className="h-8 border border-border bg-transparent px-2 font-mono text-[10px] tracking-[0.1em] uppercase"
+                      className="h-8 border border-border bg-transparent px-2 font-mono text-[10px] tracking-[0.1em]"
                     >
                       <option value="">Outcome…</option>
                       <option value="YES">YES</option>

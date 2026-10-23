@@ -59,8 +59,8 @@ export function CreateMarketForm({
   return (
     <section className="border-2 border-foreground">
       <header className="flex items-baseline justify-between gap-4 border-b-2 border-foreground px-4 py-3">
-        <h2 className="font-mono text-[10px] tracking-[0.18em] uppercase">New market</h2>
-        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+        <h2 className="font-mono text-[10px] tracking-[0.18em]">New market</h2>
+        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
           Draft or publish
         </p>
       </header>
@@ -106,7 +106,7 @@ export function CreateMarketForm({
         </Field>
 
         <div className="flex items-end">
-          <label className="flex items-center gap-3 font-mono text-[10px] tracking-[0.14em] uppercase">
+          <label className="flex items-center gap-3 font-mono text-[10px] tracking-[0.14em]">
             <input
               type="checkbox"
               checked={publish}
@@ -118,7 +118,7 @@ export function CreateMarketForm({
         </div>
 
         {createError ? (
-          <p className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive uppercase lg:col-span-2">
+          <p className="border-l-2 border-destructive pl-3 font-mono text-[10px] leading-relaxed tracking-[0.08em] text-destructive lg:col-span-2">
             {createError}
           </p>
         ) : null}

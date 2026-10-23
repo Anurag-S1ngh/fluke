@@ -48,8 +48,8 @@ export function MarketsList() {
                 aria-pressed={status === tab.status}
                 className={
                   status === tab.status
-                    ? "border-2 border-foreground bg-foreground px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-background uppercase"
-                    : "border-2 border-transparent px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+                    ? "border-2 border-foreground bg-foreground px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-background"
+                    : "border-2 border-transparent px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
                 }
               >
                 {tab.label}
@@ -57,7 +57,7 @@ export function MarketsList() {
             ))}
           </div>
 
-          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
             {loading
               ? "Reading the tape"
               : `${markets.length} ${markets.length === 1 ? "market" : "markets"}`}
@@ -72,7 +72,7 @@ export function MarketsList() {
               <button
                 type="button"
                 onClick={() => void reload()}
-                className="border border-foreground px-4 py-2 font-mono text-[11px] tracking-[0.16em] uppercase hover:bg-foreground hover:text-background"
+                className="border border-foreground px-4 py-2 font-mono text-[11px] tracking-[0.16em] hover:bg-foreground hover:text-background"
               >
                 Try again
               </button>
@@ -90,7 +90,7 @@ export function MarketsList() {
                 <button
                   type="button"
                   onClick={() => setStatus("OPEN")}
-                  className="border border-foreground px-4 py-2 font-mono text-[11px] tracking-[0.16em] uppercase hover:bg-foreground hover:text-background"
+                  className="border border-foreground px-4 py-2 font-mono text-[11px] tracking-[0.16em] hover:bg-foreground hover:text-background"
                 >
                   See open markets
                 </button>
@@ -108,7 +108,7 @@ export function MarketsList() {
                     <div>
                       <div className="flex flex-wrap items-center gap-3">
                         <StatusTag status={market.status} />
-                        <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+                        <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
                           {market.status === "OPEN" || market.status === "CLOSED"
                             ? `Closes ${formatDate(market.closesAt)}`
                             : `Filed ${formatDate(market.createdAt)}`}
@@ -122,14 +122,14 @@ export function MarketsList() {
                     <div className="flex items-center justify-end gap-4">
                       {market.status === "RESOLVED" && market.outcome ? (
                         <div className="text-right">
-                          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+                          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
                             Resolved
                           </p>
                           <p className="font-mono text-lg">{market.outcome}</p>
                         </div>
                       ) : market.status === "REFUND" ? (
                         <div className="text-right">
-                          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+                          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
                             Positions
                           </p>
                           <p className="font-mono text-sm">Refunded</p>

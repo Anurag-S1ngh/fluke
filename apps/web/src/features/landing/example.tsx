@@ -21,7 +21,7 @@ export function Example() {
 
         <div className="mx-auto mt-16 max-w-3xl border-2 border-foreground">
           <div className="border-b border-border px-6 py-4">
-            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
               Open · Closes on stated date
             </p>
             <p className="mt-2 font-serif text-2xl leading-tight text-balance sm:text-3xl">
@@ -30,18 +30,14 @@ export function Example() {
           </div>
           <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
             <div className="border border-border p-4">
-              <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-                YES
-              </p>
+              <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">YES</p>
               <p className="mt-1 font-mono text-3xl">64¢</p>
               <div className="mt-3 h-2 bg-muted" role="img" aria-label="YES priced at 64 cents">
                 <div className="h-full w-[64%] bg-signal" />
               </div>
             </div>
             <div className="border border-border p-4">
-              <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-                NO
-              </p>
+              <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">NO</p>
               <p className="mt-1 font-mono text-3xl">36¢</p>
               <div className="mt-3 h-2 bg-muted" role="img" aria-label="NO priced at 36 cents">
                 <div className="h-full w-[36%] bg-foreground" />

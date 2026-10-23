@@ -15,7 +15,7 @@ export function StatusTag({ status, className }: { status: MarketStatus; classNa
   return (
     <span
       className={cn(
-        "inline-flex items-center border px-1.5 py-0.5 font-mono text-[10px] tracking-[0.14em] uppercase",
+        "inline-flex items-center border px-1.5 py-0.5 font-mono text-[10px] tracking-[0.14em]",
         marketStatusStyles[status],
         className,
       )}
@@ -36,7 +36,7 @@ export function OrderStatusTag({ status }: { status: OrderStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center border px-1.5 py-0.5 font-mono text-[10px] tracking-[0.14em] uppercase",
+        "inline-flex items-center border px-1.5 py-0.5 font-mono text-[10px] tracking-[0.14em]",
         orderStatusStyles[status],
       )}
     >
