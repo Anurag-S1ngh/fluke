@@ -81,7 +81,7 @@ export function SiteFooter({ landing = false }: { landing?: boolean }) {
   return (
     <footer>
       <div className="mx-auto max-w-7xl px-6 pb-10">
-        <div className={cn("border-b-2 border-foreground pb-6", landing ? "pt-6" : "pt-24")}>
+        <div className={cn("border-b-2 border-foreground pb-6", landing ? "pt-6" : "pt-48")}>
           <p className="font-serif text-[clamp(4rem,15vw,10rem)] leading-[0.8] tracking-[-0.04em]">
             fluke<span className="text-signal">.</span>
           </p>
