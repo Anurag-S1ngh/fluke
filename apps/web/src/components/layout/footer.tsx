@@ -1,4 +1,3 @@
-import { cn } from "@fluke/ui/lib/utils";
 import type { Route } from "next";
 import Link from "next/link";
 
@@ -83,7 +82,7 @@ function PageLinks({ landing }: { landing: boolean }) {
  */
 export function SiteFooter({ landing = false }: { landing?: boolean }) {
   return (
-    <footer className={cn(!landing && "border-t-2 border-foreground")}>
+    <footer>
       <div className="mx-auto max-w-7xl px-6 pb-10">
         <div className="border-b-2 border-foreground py-6">
           <p className="font-serif text-[clamp(4rem,15vw,10rem)] leading-[0.8] tracking-[-0.04em]">
