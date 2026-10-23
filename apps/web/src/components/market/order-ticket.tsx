@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@fluke/ui/lib/utils";
 import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
@@ -45,6 +46,7 @@ export function OrderTicket({
   const validPrice = Number.isInteger(priceNumber) && priceNumber >= 1 && priceNumber <= 99;
   const validQuantity = Number.isInteger(quantityNumber) && quantityNumber >= 1;
   const total = validPrice && validQuantity ? priceNumber * quantityNumber : 0;
+  const payout = validQuantity ? quantityNumber * 100 : 0;
   const availableShares = shares[outcome];
   const affordable =
     side === "BID" ? total <= (user?.balance ?? 0) : quantityNumber <= availableShares;
@@ -148,31 +150,34 @@ export function OrderTicket({
       </header>
 
       <form onSubmit={submit} className="space-y-4 p-4">
-        <div>
-          <span className={labelClass}>Outcome</span>
-          <div className="mt-2 grid grid-cols-2 border border-foreground">
-            {outcomes.map((option) => (
+        <div className="grid grid-cols-2 gap-2">
+          {outcomes.map((option) => {
+            const quote = best[option].ask ?? best[option].bid;
+            const active = outcome === option;
+            return (
               <button
                 key={option}
                 type="button"
                 onClick={() => setOutcome(option)}
-                aria-pressed={outcome === option}
-                className={
-                  outcome === option
+                aria-pressed={active}
+                className={cn(
+                  "flex items-baseline justify-between gap-2 border-2 px-3 py-2.5 font-mono text-[11px] tracking-[0.1em] transition-colors",
+                  active
                     ? option === "YES"
-                      ? "bg-signal px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background"
-                      : "bg-foreground px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background"
-                    : "px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
-                }
+                      ? "border-signal bg-signal text-background"
+                      : "border-foreground bg-foreground text-background"
+                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+                )}
               >
-                {option}
+                <span>{option === "YES" ? "Yes" : "No"}</span>
+                <span>{quote === null || quote === undefined ? "—" : formatPrice(quote)}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
         <div>
-          <span className={labelClass}>Side</span>
+          <span className={labelClass}>Order</span>
           <div className="mt-2 grid grid-cols-2 border border-foreground">
             {(["BID", "ASK"] as const).map((option) => (
               <button
@@ -182,8 +187,8 @@ export function OrderTicket({
                 aria-pressed={side === option}
                 className={
                   side === option
-                    ? "bg-foreground px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-background"
-                    : "px-3 py-2.5 font-mono text-[11px] tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+                    ? "bg-foreground px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-background"
+                    : "px-3 py-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
                 }
               >
                 {option === "BID" ? "Buy" : "Sell"}
@@ -212,7 +217,7 @@ export function OrderTicket({
             </div>
           </Field>
 
-          <Field label="Quantity" hint={side === "ASK" ? `${availableShares} held` : undefined}>
+          <Field label="Shares" hint={side === "ASK" ? `${availableShares} held` : undefined}>
             <input
               type="number"
               inputMode="numeric"
@@ -232,6 +237,10 @@ export function OrderTicket({
               {side === "BID" ? "Max cost" : "Min proceeds"}
             </dt>
             <dd>{formatMoney(total)}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">To win</dt>
+            <dd>{formatMoney(payout)}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-4">
             <dt className="text-muted-foreground">{side === "BID" ? "Price" : "Available"}</dt>

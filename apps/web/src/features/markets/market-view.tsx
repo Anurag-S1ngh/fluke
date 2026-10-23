@@ -15,8 +15,10 @@ import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { StatusTag } from "@/components/ui/status-tag";
 import { api } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
-import type { BookLevel, Market, Order, Outcome, Position } from "@/lib/types";
+import type { BookLevel, Market, MarketHistory, Order, Outcome, Position } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
+
+import { PriceChart } from "./price-chart";
 
 function computeBest(book: BookLevel[]): BestPrices {
   const pick = (outcome: Outcome) => {
@@ -44,6 +46,10 @@ export function MarketView({ marketId }: { marketId: string }) {
     api<{ book: BookLevel[] }>(`/orders/book?marketId=${marketId}`),
   );
 
+  const history = useAsync<MarketHistory>(`history:${marketId}`, () =>
+    api<MarketHistory>(`/markets/${marketId}/history`),
+  );
+
   const orders = useAsync(`orders:${user?.id ?? "guest"}:${marketId}`, () =>
     user
       ? api<{ orders: Order[] }>(`/orders?marketId=${marketId}`)
@@ -56,6 +62,7 @@ export function MarketView({ marketId }: { marketId: string }) {
 
   const levels = React.useMemo(() => book.data?.book ?? [], [book.data]);
   const best = React.useMemo(() => computeBest(levels), [levels]);
+  const lastPrice = history.data?.points.at(-1)?.yes ?? null;
 
   const shares = React.useMemo(() => {
     const totals: Record<Outcome, number> = { YES: 0, NO: 0 };
@@ -68,8 +75,14 @@ export function MarketView({ marketId }: { marketId: string }) {
   }, [marketId, positions.data]);
 
   const reloadTrading = React.useCallback(async () => {
-    await Promise.all([book.reload(), orders.reload(), positions.reload(), refreshMe()]);
-  }, [book.reload, orders.reload, positions.reload, refreshMe]);
+    await Promise.all([
+      book.reload(),
+      history.reload(),
+      orders.reload(),
+      positions.reload(),
+      refreshMe(),
+    ]);
+  }, [book.reload, history.reload, orders.reload, positions.reload, refreshMe]);
 
   const cancelOrder = React.useCallback(
     async (order: Order) => {
@@ -127,56 +140,48 @@ export function MarketView({ marketId }: { marketId: string }) {
         </Link>
       </div>
 
-      <header className="border-b-2 border-foreground">
-        <div className="mx-auto max-w-7xl px-6 py-8 sm:py-12">
-          <div className="flex flex-wrap items-center gap-3">
-            <StatusTag status={data.status} />
-            <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
-              {data.status === "OPEN" || data.status === "CLOSED"
-                ? `Closes ${formatDateTime(data.closesAt)}`
-                : `Filed ${formatDate(data.createdAt)}`}
-            </span>
-          </div>
-
-          <h1 className="mt-5 max-w-4xl font-serif text-4xl leading-[1.02] tracking-[-0.015em] text-balance sm:text-5xl lg:text-6xl">
-            {data.question}
-          </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-            {data.description}
-          </p>
-
-          {data.status === "RESOLVED" && data.outcome ? (
-            <div className="mt-7 border-l-4 border-signal pl-4">
-              <p className="font-mono text-[10px] tracking-[0.16em] text-signal">
-                Resolved {data.outcome}
-              </p>
-              <p className="mt-1 font-serif text-2xl">Winning shares paid one dollar each.</p>
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-8 lg:grid-cols-[1.55fr_1fr] lg:items-start lg:gap-14">
+        <div className="space-y-8">
+          <header>
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusTag status={data.status} />
+              <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
+                {data.status === "OPEN" || data.status === "CLOSED"
+                  ? `Closes ${formatDateTime(data.closesAt)}`
+                  : `Filed ${formatDate(data.createdAt)}`}
+              </span>
             </div>
-          ) : data.status === "REFUND" ? (
-            <div className="mt-7 border-l-4 border-signal pl-4">
-              <p className="font-mono text-[10px] tracking-[0.16em] text-signal">Refunded</p>
-              <p className="mt-1 font-serif text-2xl">Every position was returned in full.</p>
-            </div>
-          ) : null}
-        </div>
-      </header>
 
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-14">
-        <aside className="space-y-6 lg:order-2 lg:sticky lg:top-6 lg:self-start">
-          <OrderTicket market={data} best={best} shares={shares} onTraded={reloadTrading} />
-          <section className="border border-border p-4">
-            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
-              Settlement
+            <h1 className="mt-4 max-w-4xl font-serif text-3xl leading-[1.05] tracking-[-0.015em] text-balance sm:text-4xl lg:text-5xl">
+              {data.question}
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
+              {data.description}
             </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-              A winning share pays $1.00. A losing share expires at zero. If the question is voided,
-              every position is refunded at cost. The market closes {formatDateTime(data.closesAt)}.
-            </p>
-          </section>
-        </aside>
 
-        <div className="space-y-10 lg:order-1">
-          <OrderBook book={levels} loading={book.loading} />
+            {data.status === "RESOLVED" && data.outcome ? (
+              <div className="mt-6 border-l-4 border-signal pl-4">
+                <p className="font-mono text-[10px] tracking-[0.16em] text-signal">
+                  Resolved {data.outcome}
+                </p>
+                <p className="mt-1 font-serif text-2xl">Winning shares paid one dollar each.</p>
+              </div>
+            ) : data.status === "REFUND" ? (
+              <div className="mt-6 border-l-4 border-signal pl-4">
+                <p className="font-mono text-[10px] tracking-[0.16em] text-signal">Refunded</p>
+                <p className="mt-1 font-serif text-2xl">Every position was returned in full.</p>
+              </div>
+            ) : null}
+          </header>
+
+          <PriceChart
+            points={history.data?.points ?? []}
+            loading={history.loading}
+            trades={history.data?.trades ?? 0}
+            volume={history.data?.volume ?? 0}
+          />
+
+          <OrderBook book={levels} loading={book.loading} lastPrice={lastPrice} />
 
           {user ? (
             <section>
@@ -196,7 +201,21 @@ export function MarketView({ marketId }: { marketId: string }) {
               />
             </section>
           ) : null}
+
+          <section className="border border-border p-4">
+            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
+              Settlement
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              A winning share pays $1.00. A losing share expires at zero. If the question is voided,
+              every position is refunded at cost. The market closes {formatDateTime(data.closesAt)}.
+            </p>
+          </section>
         </div>
+
+        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <OrderTicket market={data} best={best} shares={shares} onTraded={reloadTrading} />
+        </aside>
       </div>
 
       <SiteFooter />

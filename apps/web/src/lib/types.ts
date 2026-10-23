@@ -62,6 +62,17 @@ export interface BookLevel {
   quantity: number;
 }
 
+export interface MarketHistoryPoint {
+  t: string;
+  yes: number;
+}
+
+export interface MarketHistory {
+  points: MarketHistoryPoint[];
+  volume: number;
+  trades: number;
+}
+
 export interface CreateMarketInput {
   question: string;
   description: string;
