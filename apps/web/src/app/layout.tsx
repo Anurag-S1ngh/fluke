@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 
 import "../index.css";
-import Header from "@/components/header";
-import Providers from "@/components/providers";
+import Providers from "@/components/layout/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,12 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
       >
-        <Providers>
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
-            {children}
-          </div>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

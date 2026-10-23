@@ -1,0 +1,83 @@
+"use client";
+
+import Link from "next/link";
+import * as React from "react";
+
+import { useAuth } from "@/components/layout/auth-provider";
+import { primaryAction, secondaryAction } from "@/components/ui/actions";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonRows } from "@/components/ui/skeleton-rows";
+import { api } from "@/lib/api";
+import type { MarketStatus, MarketSummary } from "@/lib/types";
+import { useAsync } from "@/lib/use-async";
+
+import { AdminMarketList } from "./admin-market-list";
+import { CreateMarketForm } from "./create-market-form";
+
+export function AdminView() {
+  const { user, loading: authLoading } = useAuth();
+  const [status, setStatus] = React.useState<MarketStatus>("DRAFT");
+
+  const markets = useAsync(`admin:${status}`, () =>
+    api<{ markets: MarketSummary[] }>(`/markets?status=${status}`),
+  );
+
+  const handleCreated = React.useCallback(
+    async (published: boolean) => {
+      const nextStatus = published ? "OPEN" : "DRAFT";
+      if (nextStatus === status) {
+        await markets.reload();
+      } else {
+        setStatus(nextStatus);
+      }
+    },
+    [markets, status],
+  );
+
+  return (
+    <main className="h-full overflow-y-auto">
+      <PageHeader
+        eyebrow="Admin"
+        title="The desk."
+        description="Write the question, close the book, and file the answer."
+        actions={
+          <Link href="/markets" className={secondaryAction}>
+            Public view
+          </Link>
+        }
+      />
+
+      {authLoading ? (
+        <div className="mx-auto max-w-7xl px-6 py-10">
+          <SkeletonRows rows={3} />
+        </div>
+      ) : !user ? (
+        <div className="mx-auto max-w-7xl px-6 py-12">
+          <EmptyState
+            title="Sign in to reach the desk."
+            description="This page is reserved for the people who run the market."
+          >
+            <Link href={`/signin?next=${encodeURIComponent("/admin")}`} className={primaryAction}>
+              Sign in
+            </Link>
+          </EmptyState>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-7xl space-y-12 px-6 py-10">
+          <CreateMarketForm onCreated={handleCreated} />
+          <AdminMarketList
+            status={status}
+            onStatusChange={setStatus}
+            markets={markets.data?.markets ?? []}
+            loading={markets.loading}
+            error={markets.error}
+            onReload={async () => {
+              await markets.reload();
+            }}
+          />
+        </div>
+      )}
+    </main>
+  );
+}
