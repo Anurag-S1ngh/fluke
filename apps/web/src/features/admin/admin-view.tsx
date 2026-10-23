@@ -4,6 +4,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { useAuth } from "@/components/layout/auth-provider";
+import { SiteFooter } from "@/components/layout/footer";
 import { primaryAction, secondaryAction } from "@/components/ui/actions";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
@@ -78,6 +79,8 @@ export function AdminView() {
           />
         </div>
       )}
+
+      <SiteFooter />
     </main>
   );
 }

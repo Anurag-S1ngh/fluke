@@ -93,6 +93,7 @@ export function MarketView({ marketId }: { marketId: string }) {
         <div className="mx-auto max-w-7xl px-6 py-10">
           <SkeletonRows rows={3} />
         </div>
+        <SiteFooter />
       </main>
     );
   }
@@ -110,6 +111,7 @@ export function MarketView({ marketId }: { marketId: string }) {
             </Link>
           </EmptyState>
         </div>
+        <SiteFooter />
       </main>
     );
   }

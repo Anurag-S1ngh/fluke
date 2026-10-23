@@ -80,74 +80,47 @@ function PageLinks({ landing }: { landing: boolean }) {
   );
 }
 
-function FullFooter() {
+/**
+ * One footer for every shell page. `landing` only changes where the section links
+ * point: in-page anchors on the landing page, routes elsewhere.
+ */
+export function SiteFooter({ landing = false }: { landing?: boolean }) {
   return (
-    <footer className="mx-auto max-w-7xl px-6 pb-10">
-      <div className="flex flex-col items-center gap-6 py-28 text-center sm:py-36">
-        <p className="max-w-[22ch] font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
-          Put your conviction where the price is.
-        </p>
-        <Link href="/markets" className={cn(primaryAction, "h-11 px-6 text-xs")}>
-          Browse markets
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Link>
-      </div>
-
-      <div className="border-b-2 border-foreground py-6">
-        <p className="font-serif text-[clamp(4rem,15vw,10rem)] leading-[0.8] tracking-[-0.04em]">
-          fluke<span className="text-signal">.</span>
-        </p>
-      </div>
-
-      <div className="grid gap-10 py-10 lg:grid-cols-[1fr_auto] lg:gap-24">
-        <div>
-          <p className="max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
-            A prediction market for real-world outcomes. YES pays $1.00, NO pays $0.00 — the price
-            is the forecast.
+    <footer className={cn(!landing && "border-t-2 border-foreground")}>
+      <div className="mx-auto max-w-7xl px-6 pb-10">
+        <div className="flex flex-col items-center gap-6 py-28 text-center sm:py-36">
+          <p className="max-w-[22ch] font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
+            Put your conviction where the price is.
           </p>
-          <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
-            © {new Date().getFullYear()} fluke
+          <Link href="/markets" className={cn(primaryAction, "h-11 px-6 text-xs")}>
+            Browse markets
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        </div>
+
+        <div className="border-b-2 border-foreground py-6">
+          <p className="font-serif text-[clamp(4rem,15vw,10rem)] leading-[0.8] tracking-[-0.04em]">
+            fluke<span className="text-signal">.</span>
           </p>
         </div>
 
-        <div className="grid w-fit gap-10 sm:grid-cols-[auto_auto] sm:justify-end sm:gap-16 lg:justify-self-end lg:gap-24">
-          <SocialLinks />
-          <PageLinks landing />
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-function CompactFooter() {
-  return (
-    <footer className="border-t-2 border-foreground">
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between sm:gap-16">
+        <div className="grid gap-10 py-10 lg:grid-cols-[1fr_auto] lg:gap-24">
           <div>
-            <Link href="/" className="font-serif text-2xl leading-none tracking-[-0.02em]">
-              fluke<span className="text-signal">.</span>
-            </Link>
-            <p className="mt-3 max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
+            <p className="max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
               A prediction market for real-world outcomes. YES pays $1.00, NO pays $0.00 — the price
               is the forecast.
             </p>
+            <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+              © {new Date().getFullYear()} fluke
+            </p>
           </div>
 
-          <div className="flex w-fit gap-10 sm:gap-16">
+          <div className="grid w-fit gap-10 sm:grid-cols-[auto_auto] sm:justify-end sm:gap-16 lg:justify-self-end lg:gap-24">
             <SocialLinks />
-            <PageLinks landing={false} />
+            <PageLinks landing={landing} />
           </div>
         </div>
-
-        <p className="mt-10 border-t border-border pt-4 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
-          © {new Date().getFullYear()} fluke
-        </p>
       </div>
     </footer>
   );
-}
-
-export function SiteFooter({ variant = "compact" }: { variant?: "compact" | "full" }) {
-  return variant === "full" ? <FullFooter /> : <CompactFooter />;
 }

@@ -18,7 +18,7 @@ export function LandingView() {
       <Quote />
       <Rules />
       <Faq />
-      <SiteFooter variant="full" />
+      <SiteFooter landing />
     </main>
   );
 }
