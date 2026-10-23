@@ -208,41 +208,43 @@ export function PriceChart({
                   strokeLinejoin="round"
                   strokeLinecap="round"
                 />
-
-                {hoverX === null ? (
-                  <circle
-                    cx={VIEW_W}
-                    cy={yOfPrice(lastPrice ?? AXIS_MIN)}
-                    r={1.5}
-                    className="fill-signal"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                ) : (
-                  <>
-                    <line
-                      x1={hoverX * VIEW_W}
-                      x2={hoverX * VIEW_W}
-                      y1={0}
-                      y2={VIEW_H}
-                      className="stroke-foreground/40"
-                      strokeWidth={1}
-                      vectorEffect="non-scaling-stroke"
-                    />
-                    <circle
-                      cx={hoverX * VIEW_W}
-                      cy={yOfPrice(hovered?.yes ?? AXIS_MIN)}
-                      r={2}
-                      className="fill-foreground"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </>
-                )}
               </svg>
+
+              {/* Markers live in HTML: SVG circles would stretch with the viewBox. */}
+              {hoverX === null ? (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal"
+                  style={{ left: "100%", top: `${(1 - (lastPrice ?? AXIS_MIN) / 100) * 100}%` }}
+                />
+              ) : (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 w-px bg-foreground/30"
+                    style={{ left: `${hoverX * 100}%` }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground"
+                    style={{
+                      left: `${hoverX * 100}%`,
+                      top: `${(1 - (hovered?.yes ?? AXIS_MIN) / 100) * 100}%`,
+                    }}
+                  />
+                </>
+              )}
 
               {hovered && hoverX !== null ? (
                 <div
-                  className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 whitespace-nowrap border border-foreground bg-background px-2 py-1 font-mono text-[10px] leading-snug shadow-sm"
-                  style={{ left: `${Math.min(88, Math.max(12, hoverX * 100))}%` }}
+                  className="pointer-events-none absolute z-10 whitespace-nowrap border border-foreground bg-background px-2 py-1 font-mono text-[10px] leading-snug shadow-sm"
+                  style={{
+                    left: `${Math.min(88, Math.max(12, hoverX * 100))}%`,
+                    top: `${(1 - hovered.yes / 100) * 100}%`,
+                    transform: `translate(-50%, ${
+                      hovered.yes > 65 ? "calc(-100% - 14px)" : "14px"
+                    })`,
+                  }}
                 >
                   <span className="block text-muted-foreground">{formatDateTime(hovered.t)}</span>
                   <span className="block">YES {formatPrice(hovered.yes)}</span>
