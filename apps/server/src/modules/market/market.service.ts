@@ -48,7 +48,7 @@ export const getMarketHistory = async (marketId: string) => {
     .from(tradesTable)
     .where(eq(tradesTable.marketId, marketId))
     .orderBy(asc(tradesTable.createdAt))
-    .limit(500);
+    .limit(2000);
 
   const points = trades.map((trade) => ({
     t: trade.createdAt.toISOString(),

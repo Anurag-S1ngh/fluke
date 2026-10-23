@@ -34,8 +34,11 @@ type Side = "BID" | "ASK";
 type MarketStatus = "DRAFT" | "OPEN" | "CLOSED" | "RESOLVED" | "REFUND";
 type LedgerType = "ASK" | "BID" | "REFUND" | "PAYOUT" | "DAILY_GRANT";
 
-/** Last two digits are decimals, so 1_000_000 is $10,000.00. */
-const START_BALANCE = 1_000_000;
+/** Last two digits are decimals, so 5_000_000 is $50,000.00. */
+const START_BALANCE = 5_000_000;
+/** Market makers fund large inventories, so they start with more. */
+const MAKER_BALANCE = 100_000_000;
+const MAKER_COUNT = 3;
 const PAYOUT_PER_SHARE = 100;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -67,7 +70,6 @@ type MarketSpec = {
   /** Target YES price in cents; NO sits at 100 minus this. */
   target: number;
   ladder: boolean;
-  trades: number;
 };
 
 const MARKET_SPECS: MarketSpec[] = [
@@ -80,7 +82,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 45,
     target: 64,
     ladder: true,
-    trades: 6,
   },
   {
     question: "Will the heavy-lift rocket reach orbit on its next flight?",
@@ -91,7 +92,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 28,
     target: 71,
     ladder: true,
-    trades: 5,
   },
   {
     question: "Will the incumbent hold their seat in the next election?",
@@ -102,7 +102,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 60,
     target: 47,
     ladder: true,
-    trades: 7,
   },
   {
     question: "Will this year set a new global heat record?",
@@ -113,7 +112,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 52,
     target: 58,
     ladder: true,
-    trades: 4,
   },
   {
     question: "Will the next flagship phone ship with a foldable display?",
@@ -124,7 +122,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 18,
     target: 18,
     ladder: true,
-    trades: 3,
   },
   {
     question: "Will the home team reach the playoffs this season?",
@@ -135,7 +132,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 33,
     target: 36,
     ladder: true,
-    trades: 5,
   },
   {
     question: "Will the metro extension open on schedule?",
@@ -146,7 +142,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 8,
     target: 82,
     ladder: true,
-    trades: 4,
   },
   {
     question: "Will the summit produce a signed agreement?",
@@ -157,7 +152,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: -6,
     target: 55,
     ladder: false,
-    trades: 5,
   },
   {
     question: "Will the film cross one billion at the box office?",
@@ -168,7 +162,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: -2,
     target: 41,
     ladder: false,
-    trades: 4,
   },
   {
     question: "Did the bill pass the upper chamber?",
@@ -179,7 +172,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: -20,
     target: 62,
     ladder: false,
-    trades: 6,
   },
   {
     question: "Did the rover land inside the target basin?",
@@ -190,7 +182,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: -35,
     target: 74,
     ladder: false,
-    trades: 5,
   },
   {
     question: "Did the club finish top of the table?",
@@ -200,7 +191,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: -14,
     target: 29,
     ladder: false,
-    trades: 6,
   },
   {
     question: "Will the launch happen before the deadline?",
@@ -211,7 +201,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: -9,
     target: 68,
     ladder: true,
-    trades: 3,
   },
   {
     question: "Will the new stadium open before next season?",
@@ -221,7 +210,6 @@ const MARKET_SPECS: MarketSpec[] = [
     closesInDays: 90,
     target: 50,
     ladder: false,
-    trades: 0,
   },
 ];
 
@@ -539,6 +527,29 @@ const settle = (market: MarketState, result: Outcome | "REFUND", at: Date) => {
 
 const clampPrice = (value: number) => Math.min(97, Math.max(3, value));
 
+/** Deterministic PRNG (mulberry32) so re-seeds reproduce the same tape. */
+const makeRandom = (seed: number) => {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+/** Mean-reverting random walk so prices wander without drifting away. */
+const makeWalk = (rng: () => number, start: number) => {
+  let price = start;
+  return () => {
+    const pull = (start - price) * 0.06;
+    const shock = (rng() - 0.5) * 8;
+    price = clampPrice(Math.round(price + pull + shock));
+    return price;
+  };
+};
+
 const adminId = randomUUID();
 const userIds = new Map<string, string>();
 
@@ -617,9 +628,10 @@ async function main() {
 
   for (const [index, trader] of TRADERS.entries()) {
     const id = randomUUID();
+    const openingBalance = index < MAKER_COUNT ? MAKER_BALANCE : START_BALANCE;
     userIds.set(trader.email, id);
-    accounts.set(id, { balance: START_BALANCE, reservedBalance: 0 });
-    post(id, "DAILY_GRANT", START_BALANCE, "CREDIT", day(-90 + index));
+    accounts.set(id, { balance: openingBalance, reservedBalance: 0 });
+    post(id, "DAILY_GRANT", openingBalance, "CREDIT", day(-90 + index));
     userRows.push({
       id,
       username: trader.username,
@@ -633,7 +645,8 @@ async function main() {
   }
 
   const traderIds = TRADERS.map((trader) => userIds.get(trader.email) as string);
-  const makers = traderIds.slice(0, 3);
+  const makers = traderIds.slice(0, MAKER_COUNT);
+  const takers = traderIds.slice(MAKER_COUNT);
 
   for (const [index, spec] of MARKET_SPECS.entries()) {
     const createdAt = day(-30 + index);
@@ -655,11 +668,17 @@ async function main() {
     const yesMid = spec.target;
     const noMid = 100 - spec.target;
 
+    const tradeCount = spec.status === "DRAFT" ? 0 : 180 + ((index * 73) % 220);
+    const maxTradeQuantity = 64;
+    const restingAskShares = spec.ladder ? 3 * 99 : 0;
+    const sharesPerOutcome = Math.ceil(tradeCount * maxTradeQuantity * 1.2) + restingAskShares;
+    const sharesPerMaker = Math.max(400, Math.ceil(sharesPerOutcome / makers.length));
+
     if (spec.status !== "DRAFT") {
       for (const outcome of ["YES", "NO"] as const) {
         const mid = outcome === "YES" ? yesMid : noMid;
         for (const maker of makers) {
-          endow(maker, marketId, outcome, 400, mid, createdAt);
+          endow(maker, marketId, outcome, sharesPerMaker, mid, createdAt);
         }
       }
 
@@ -694,13 +713,17 @@ async function main() {
         }
       }
 
-      for (let n = 0; n < spec.trades; n += 1) {
-        const outcome: Outcome = n % 3 === 0 ? "NO" : "YES";
-        const mid = outcome === "YES" ? yesMid : noMid;
-        const buyer = traderIds[(index + n) % traderIds.length] as string;
+      const spanStart = createdAt.getTime();
+      const spanEnd = Math.max(spanStart + 3_600_000, Math.min(closesAt.getTime(), now.getTime()));
+      const rng = makeRandom((index + 1) * 2_654_435_761);
+      const nextYesPrice = makeWalk(rng, spec.target);
+
+      for (let n = 0; n < tradeCount; n += 1) {
+        const yesPrice = nextYesPrice();
+        const outcome: Outcome = rng() < 0.55 ? "YES" : "NO";
+        const price = clampPrice(outcome === "YES" ? yesPrice : 100 - yesPrice);
+        const buyer = takers[(index + n) % takers.length] as string;
         const seller = makers[n % makers.length] as string;
-        if (buyer === seller) continue;
-        const price = clampPrice(mid + (n % 2 === 0 ? 1 : -1));
         const quantity = 20 + ((n * 13 + index * 7) % 45);
         fillTrade(
           marketId,
@@ -709,7 +732,7 @@ async function main() {
           quantity,
           buyer,
           seller,
-          new Date(createdAt.getTime() + (n + 1) * 3_600_000),
+          new Date(spanStart + ((spanEnd - spanStart) * (n + 1)) / (tradeCount + 1)),
         );
       }
     }
@@ -757,12 +780,17 @@ async function main() {
   }));
 
   await db.transaction(async (tx) => {
-    await tx.insert(usersTable).values(userRows);
-    await tx.insert(marketsTable).values(marketRows);
-    if (orders.length > 0) await tx.insert(ordersTable).values(orders);
-    if (trades.length > 0) await tx.insert(tradesTable).values(trades);
-    if (positionRows.length > 0) await tx.insert(positionsTable).values(positionRows);
-    if (ledger.length > 0) await tx.insert(ledgerTable).values(ledger);
+    const chunks = <T>(rows: T[], size: number) =>
+      Array.from({ length: Math.ceil(rows.length / size) }, (_, index) =>
+        rows.slice(index * size, (index + 1) * size),
+      );
+
+    for (const batch of chunks(userRows, 500)) await tx.insert(usersTable).values(batch);
+    for (const batch of chunks(marketRows, 500)) await tx.insert(marketsTable).values(batch);
+    for (const batch of chunks(orders, 300)) await tx.insert(ordersTable).values(batch);
+    for (const batch of chunks(trades, 500)) await tx.insert(tradesTable).values(batch);
+    for (const batch of chunks(positionRows, 500)) await tx.insert(positionsTable).values(batch);
+    for (const batch of chunks(ledger, 500)) await tx.insert(ledgerTable).values(batch);
   });
 
   const openBooks = markets.filter((state) => state.status === "OPEN").length;
