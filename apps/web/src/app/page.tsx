@@ -173,11 +173,7 @@ export default function Home() {
                   YES
                 </p>
                 <p className="mt-1 font-mono text-3xl">64¢</p>
-                <div
-                  className="mt-3 h-2 bg-muted"
-                  role="img"
-                  aria-label="YES priced at 64 cents"
-                >
+                <div className="mt-3 h-2 bg-muted" role="img" aria-label="YES priced at 64 cents">
                   <div className="h-full w-[64%] bg-signal" />
                 </div>
               </div>
@@ -319,8 +315,8 @@ export default function Home() {
         <div className="grid gap-10 py-10 lg:grid-cols-[1fr_auto] lg:gap-24">
           <div>
             <p className="max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
-              A prediction market for real-world outcomes. YES pays $1.00, NO pays $0.00 — the
-              price is the forecast.
+              A prediction market for real-world outcomes. YES pays $1.00, NO pays $0.00 — the price
+              is the forecast.
             </p>
             <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
               © {new Date().getFullYear()} fluke
@@ -328,67 +324,67 @@ export default function Home() {
           </div>
 
           <div className="grid w-fit gap-10 sm:grid-cols-[auto_auto] sm:justify-end sm:gap-16 lg:justify-self-end lg:gap-24">
-              <nav aria-label="Socials">
-                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-                  Socials
-                </p>
-                <ul className="mt-3 space-y-2">
-                  <li>
-                    <a href="#" className="text-sm hover:text-signal">
-                      X
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-sm hover:text-signal">
-                      Discord
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-sm hover:text-signal">
-                      GitHub
-                    </a>
-                  </li>
-                </ul>
-              </nav>
+            <nav aria-label="Socials">
+              <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                Socials
+              </p>
+              <ul className="mt-3 space-y-2">
+                <li>
+                  <a href="#" className="text-sm hover:text-signal">
+                    X
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm hover:text-signal">
+                    Discord
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm hover:text-signal">
+                    GitHub
+                  </a>
+                </li>
+              </ul>
+            </nav>
 
-              <nav aria-label="Pages">
-                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-                  Pages
-                </p>
-                <ul className="mt-3 space-y-2">
-                  <li>
-                    <Link href="/markets" className="text-sm hover:text-signal">
-                      Markets
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/portfolio" className="text-sm hover:text-signal">
-                      Portfolio
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#how-it-works" className="text-sm hover:text-signal">
-                      How it works
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#example" className="text-sm hover:text-signal">
-                      An example
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#the-rules" className="text-sm hover:text-signal">
-                      The rules
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#faq" className="text-sm hover:text-signal">
-                      Questions
-                    </Link>
-                  </li>
-                </ul>
-              </nav>
-            </div>
+            <nav aria-label="Pages">
+              <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                Pages
+              </p>
+              <ul className="mt-3 space-y-2">
+                <li>
+                  <Link href="/markets" className="text-sm hover:text-signal">
+                    Markets
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/portfolio" className="text-sm hover:text-signal">
+                    Portfolio
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#how-it-works" className="text-sm hover:text-signal">
+                    How it works
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#example" className="text-sm hover:text-signal">
+                    An example
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#the-rules" className="text-sm hover:text-signal">
+                    The rules
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#faq" className="text-sm hover:text-signal">
+                    Questions
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       </footer>
     </main>

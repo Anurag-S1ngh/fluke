@@ -30,9 +30,7 @@ export default function Header() {
     if (!main) return;
     const onScroll = () => {
       const hero = main.querySelector("section");
-      const threshold = hero
-        ? (hero as HTMLElement).offsetHeight - 96
-        : window.innerHeight - 96;
+      const threshold = hero ? (hero as HTMLElement).offsetHeight - 96 : window.innerHeight - 96;
       setPastHero(main.scrollTop > threshold);
     };
     onScroll();
@@ -87,8 +85,22 @@ export default function Header() {
             <span className={overlay ? "text-white/70" : "text-muted-foreground"}>···</span>
           ) : user ? (
             <>
-              <span className={cn("hidden sm:inline", overlay ? "text-white/70" : "text-muted-foreground")}>{user.username}</span>
-              <span className={cn("hidden sm:inline", overlay ? "text-white/70" : "text-muted-foreground")}>·</span>
+              <span
+                className={cn(
+                  "hidden sm:inline",
+                  overlay ? "text-white/70" : "text-muted-foreground",
+                )}
+              >
+                {user.username}
+              </span>
+              <span
+                className={cn(
+                  "hidden sm:inline",
+                  overlay ? "text-white/70" : "text-muted-foreground",
+                )}
+              >
+                ·
+              </span>
               <span>{formatMoney(user.balance)}</span>
               <button
                 type="button"
