@@ -1,3 +1,4 @@
+import { cn } from "@fluke/ui/lib/utils";
 import type { Route } from "next";
 import Link from "next/link";
 
@@ -80,7 +81,7 @@ export function SiteFooter({ landing = false }: { landing?: boolean }) {
   return (
     <footer>
       <div className="mx-auto max-w-7xl px-6 pb-10">
-        <div className="border-b-2 border-foreground py-6">
+        <div className={cn("border-b-2 border-foreground pb-6", landing ? "pt-6" : "pt-24")}>
           <p className="font-serif text-[clamp(4rem,15vw,10rem)] leading-[0.8] tracking-[-0.04em]">
             fluke<span className="text-signal">.</span>
           </p>
