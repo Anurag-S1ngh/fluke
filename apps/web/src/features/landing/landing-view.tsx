@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/layout/footer";
 
+import { ClosingCta } from "./closing-cta";
 import { Example } from "./example";
 import { Faq } from "./faq";
 import { Hero } from "./hero";
@@ -18,6 +19,7 @@ export function LandingView() {
       <Quote />
       <Rules />
       <Faq />
+      <ClosingCta />
       <SiteFooter landing />
     </main>
   );

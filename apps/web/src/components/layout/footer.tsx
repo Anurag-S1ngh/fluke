@@ -1,9 +1,6 @@
 import { cn } from "@fluke/ui/lib/utils";
-import { ArrowRight } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-
-import { primaryAction } from "@/components/ui/actions";
 
 const socials = ["X", "Discord", "GitHub"];
 
@@ -88,16 +85,6 @@ export function SiteFooter({ landing = false }: { landing?: boolean }) {
   return (
     <footer className={cn(!landing && "border-t-2 border-foreground")}>
       <div className="mx-auto max-w-7xl px-6 pb-10">
-        <div className="flex flex-col items-center gap-6 py-28 text-center sm:py-36">
-          <p className="max-w-[22ch] font-serif text-3xl leading-tight tracking-[-0.01em] text-balance sm:text-4xl">
-            Put your conviction where the price is.
-          </p>
-          <Link href="/markets" className={cn(primaryAction, "h-11 px-6 text-xs")}>
-            Browse markets
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </Link>
-        </div>
-
         <div className="border-b-2 border-foreground py-6">
           <p className="font-serif text-[clamp(4rem,15vw,10rem)] leading-[0.8] tracking-[-0.04em]">
             fluke<span className="text-signal">.</span>
