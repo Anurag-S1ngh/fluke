@@ -23,11 +23,15 @@ type RangeId = (typeof RANGES)[number]["id"];
 type Plot = {
   line: string;
   area: string;
-  min: number;
-  max: number;
+  dataMin: number;
+  dataMax: number;
   xs: number[];
   ticks: { x: number; label: string }[];
 };
+
+/** The price axis is always the full contract range: $0.00 to $1.00. */
+const AXIS_MIN = 0;
+const AXIS_MAX = 100;
 
 function windowPoints(points: MarketHistoryPoint[], range: RangeId) {
   const ms = RANGES.find((option) => option.id === range)?.ms ?? null;
@@ -43,9 +47,8 @@ function buildPlot(points: MarketHistoryPoint[]): Plot | null {
   }
 
   const values = points.map((point) => point.yes);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
 
   const times = points.map((point) => new Date(point.t).getTime());
   const first = times[0] as number;
@@ -54,7 +57,7 @@ function buildPlot(points: MarketHistoryPoint[]): Plot | null {
 
   const xOf = (index: number) =>
     duration > 0 ? ((times[index] as number) - first) / duration : index / (points.length - 1 || 1);
-  const yOf = (value: number) => VIEW_H - ((value - min) / span) * VIEW_H;
+  const yOf = (value: number) => VIEW_H - ((value - AXIS_MIN) / (AXIS_MAX - AXIS_MIN)) * VIEW_H;
 
   const xs = points.map((_, index) => xOf(index));
 
@@ -81,11 +84,11 @@ function buildPlot(points: MarketHistoryPoint[]): Plot | null {
     ticks.push({ x: xOf(index) * VIEW_W, label });
   }
 
-  return { line, area, min, max, xs, ticks };
+  return { line, area, dataMin, dataMax, xs, ticks };
 }
 
-function gridLines(min: number, max: number) {
-  return [25, 50, 75].filter((price) => price > min && price < max);
+function gridLines() {
+  return [25, 50, 75];
 }
 
 export function PriceChart({
@@ -105,7 +108,8 @@ export function PriceChart({
   const visible = React.useMemo(() => windowPoints(points, range), [points, range]);
   const plot = React.useMemo(() => buildPlot(visible), [visible]);
   const lastPrice = visible.at(-1)?.yes ?? null;
-  const span = plot ? plot.max - plot.min || 1 : 1;
+  const yOfPrice = (value: number) =>
+    VIEW_H - ((value - AXIS_MIN) / (AXIS_MAX - AXIS_MIN)) * VIEW_H;
 
   const hovered = hover === null ? null : visible[hover];
   const hoverX = hover === null ? null : (plot?.xs[hover] ?? null);
@@ -161,8 +165,9 @@ export function PriceChart({
         ) : plot ? (
           <>
             <div className="pointer-events-none absolute top-6 right-4 flex h-56 flex-col justify-between text-right font-mono text-[10px] text-muted-foreground">
-              <span>{formatPrice(plot.max)}</span>
-              <span>{formatPrice(plot.min)}</span>
+              <span>{formatMoney(AXIS_MAX)}</span>
+              <span>{formatMoney(50)}</span>
+              <span>{formatMoney(AXIS_MIN)}</span>
             </div>
 
             <div
@@ -177,8 +182,8 @@ export function PriceChart({
                 role="img"
                 aria-label={`YES price history, ${visible.length} trades`}
               >
-                {gridLines(plot.min, plot.max).map((price) => {
-                  const y = VIEW_H - ((price - plot.min) / span) * VIEW_H;
+                {gridLines().map((price) => {
+                  const y = yOfPrice(price);
                   return (
                     <line
                       key={price}
@@ -207,7 +212,7 @@ export function PriceChart({
                 {hoverX === null ? (
                   <circle
                     cx={VIEW_W}
-                    cy={VIEW_H - (((lastPrice ?? plot.min) - plot.min) / span) * VIEW_H}
+                    cy={yOfPrice(lastPrice ?? AXIS_MIN)}
                     r={1.5}
                     className="fill-signal"
                     vectorEffect="non-scaling-stroke"
@@ -225,7 +230,7 @@ export function PriceChart({
                     />
                     <circle
                       cx={hoverX * VIEW_W}
-                      cy={VIEW_H - (((hovered?.yes ?? plot.min) - plot.min) / span) * VIEW_H}
+                      cy={yOfPrice(hovered?.yes ?? AXIS_MIN)}
                       r={2}
                       className="fill-foreground"
                       vectorEffect="non-scaling-stroke"
@@ -257,7 +262,7 @@ export function PriceChart({
               </span>
               <span>
                 Last {lastPrice === null ? "—" : formatPrice(lastPrice)} ·{" "}
-                {formatPrice(plot.max - plot.min)} range
+                {formatPrice(plot.dataMax - plot.dataMin)} range
               </span>
             </div>
           </>
