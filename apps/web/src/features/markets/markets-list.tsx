@@ -3,7 +3,6 @@
 import { ArrowUpRight } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import * as React from "react";
 
 import { SiteFooter } from "@/components/layout/footer";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,20 +11,12 @@ import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { StatusTag } from "@/components/ui/status-tag";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import type { MarketStatus, MarketSummary } from "@/lib/types";
+import type { MarketSummary } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
-const tabs: { status: MarketStatus; label: string }[] = [
-  { status: "OPEN", label: "Open" },
-  { status: "CLOSED", label: "Closed" },
-  { status: "RESOLVED", label: "Resolved" },
-  { status: "REFUND", label: "Refunded" },
-];
-
 export function MarketsList() {
-  const [status, setStatus] = React.useState<MarketStatus>("OPEN");
-  const { data, error, loading, reload } = useAsync(`markets:${status}`, () =>
-    api<{ markets: MarketSummary[] }>(`/markets?status=${status}`),
+  const { data, error, loading, reload } = useAsync("markets:open", () =>
+    api<{ markets: MarketSummary[] }>("/markets?status=OPEN"),
   );
   const markets = data?.markets ?? [];
 
@@ -39,23 +30,9 @@ export function MarketsList() {
 
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border py-4">
-          <div className="flex flex-wrap items-center gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.status}
-                type="button"
-                onClick={() => setStatus(tab.status)}
-                aria-pressed={status === tab.status}
-                className={
-                  status === tab.status
-                    ? "border-2 border-foreground bg-foreground px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-background"
-                    : "border-2 border-transparent px-3 py-1.5 font-mono text-[11px] tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-                }
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <p className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground">
+            Open questions
+          </p>
 
           <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
             {loading
@@ -79,23 +56,9 @@ export function MarketsList() {
             </EmptyState>
           ) : markets.length === 0 ? (
             <EmptyState
-              title={status === "OPEN" ? "No open questions." : "Nothing on this page."}
-              description={
-                status === "OPEN"
-                  ? "The desk is between questions. Resolved markets stay in the archive."
-                  : "Nothing has been filed under this heading yet."
-              }
-            >
-              {status !== "OPEN" ? (
-                <button
-                  type="button"
-                  onClick={() => setStatus("OPEN")}
-                  className="border border-foreground px-4 py-2 font-mono text-[11px] tracking-[0.16em] hover:bg-foreground hover:text-background"
-                >
-                  See open markets
-                </button>
-              ) : null}
-            </EmptyState>
+              title="No open questions."
+              description="The desk is between questions. Check back when the next one is posted."
+            />
           ) : (
             <div>
               {markets.map((market) => (
@@ -109,9 +72,7 @@ export function MarketsList() {
                       <div className="flex flex-wrap items-center gap-3">
                         <StatusTag status={market.status} />
                         <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
-                          {market.status === "OPEN" || market.status === "CLOSED"
-                            ? `Closes ${formatDate(market.closesAt)}`
-                            : `Filed ${formatDate(market.createdAt)}`}
+                          Closes {formatDate(market.closesAt)}
                         </span>
                       </div>
                       <h2 className="mt-3 max-w-3xl font-serif text-2xl leading-tight tracking-[-0.01em] text-balance transition-colors group-hover:text-signal sm:text-3xl">
@@ -120,21 +81,6 @@ export function MarketsList() {
                     </div>
 
                     <div className="flex items-center justify-end gap-4">
-                      {market.status === "RESOLVED" && market.outcome ? (
-                        <div className="text-right">
-                          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
-                            Resolved
-                          </p>
-                          <p className="font-mono text-lg">{market.outcome}</p>
-                        </div>
-                      ) : market.status === "REFUND" ? (
-                        <div className="text-right">
-                          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
-                            Positions
-                          </p>
-                          <p className="font-mono text-sm">Refunded</p>
-                        </div>
-                      ) : null}
                       <ArrowUpRight
                         aria-hidden="true"
                         className="size-5 text-muted-foreground transition-colors group-hover:text-signal"
