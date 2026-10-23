@@ -1,16 +1,41 @@
-import { formatDate, formatMoney, formatPrice } from "@/lib/format";
+"use client";
+
+import { cn } from "@fluke/ui/lib/utils";
+import * as React from "react";
+
+import { formatDate, formatDateTime, formatMoney, formatPrice } from "@/lib/format";
 import type { MarketHistoryPoint } from "@/lib/types";
 
 const VIEW_W = 100;
 const VIEW_H = 40;
+
+const RANGES = [
+  { id: "1H", label: "1H", ms: 60 * 60 * 1000 },
+  { id: "6H", label: "6H", ms: 6 * 60 * 60 * 1000 },
+  { id: "1D", label: "1D", ms: 24 * 60 * 60 * 1000 },
+  { id: "1W", label: "1W", ms: 7 * 24 * 60 * 60 * 1000 },
+  { id: "1M", label: "1M", ms: 30 * 24 * 60 * 60 * 1000 },
+  { id: "ALL", label: "All", ms: null },
+] as const;
+
+type RangeId = (typeof RANGES)[number]["id"];
 
 type Plot = {
   line: string;
   area: string;
   min: number;
   max: number;
+  xs: number[];
   ticks: { x: number; label: string }[];
 };
+
+function windowPoints(points: MarketHistoryPoint[], range: RangeId) {
+  const ms = RANGES.find((option) => option.id === range)?.ms ?? null;
+  if (ms === null || points.length === 0) return points;
+
+  const end = new Date(points[points.length - 1]?.t as string).getTime();
+  return points.filter((point) => new Date(point.t).getTime() >= end - ms);
+}
 
 function buildPlot(points: MarketHistoryPoint[]): Plot | null {
   if (points.length === 0) {
@@ -28,10 +53,10 @@ function buildPlot(points: MarketHistoryPoint[]): Plot | null {
   const duration = last - first;
 
   const xOf = (index: number) =>
-    duration > 0
-      ? ((times[index] as number) - first) / duration
-      : (index / (points.length - 1 || 1)) * 1;
+    duration > 0 ? ((times[index] as number) - first) / duration : index / (points.length - 1 || 1);
   const yOf = (value: number) => VIEW_H - ((value - min) / span) * VIEW_H;
+
+  const xs = points.map((_, index) => xOf(index));
 
   // Step path: price holds until the next fill, then jumps.
   let line = `M${(xOf(0) * VIEW_W).toFixed(2)},${yOf(values[0] as number).toFixed(2)}`;
@@ -56,7 +81,7 @@ function buildPlot(points: MarketHistoryPoint[]): Plot | null {
     ticks.push({ x: xOf(index) * VIEW_W, label });
   }
 
-  return { line, area, min, max, ticks };
+  return { line, area, min, max, xs, ticks };
 }
 
 function gridLines(min: number, max: number) {
@@ -74,21 +99,60 @@ export function PriceChart({
   trades: number;
   volume: number;
 }) {
-  const plot = buildPlot(points);
-  const lastPrice = points.at(-1)?.yes ?? null;
+  const [range, setRange] = React.useState<RangeId>("ALL");
+  const [hover, setHover] = React.useState<number | null>(null);
+
+  const visible = React.useMemo(() => windowPoints(points, range), [points, range]);
+  const plot = React.useMemo(() => buildPlot(visible), [visible]);
+  const lastPrice = visible.at(-1)?.yes ?? null;
   const span = plot ? plot.max - plot.min || 1 : 1;
+
+  const hovered = hover === null ? null : visible[hover];
+  const hoverX = hover === null ? null : (plot?.xs[hover] ?? null);
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!plot || visible.length === 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+
+    let best = 0;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < plot.xs.length; index += 1) {
+      const distance = Math.abs((plot.xs[index] as number) - ratio);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = index;
+      }
+    }
+    setHover(best);
+  };
 
   return (
     <section className="border-2 border-foreground">
-      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b-2 border-foreground px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-foreground px-4 py-3">
         <h2 className="font-mono text-[10px] tracking-[0.18em]">Price history</h2>
-        <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
-          {loading
-            ? "Reading"
-            : lastPrice === null
-              ? "No trades yet"
-              : `Last ${formatPrice(lastPrice)}`}
-        </p>
+
+        <div className="flex flex-wrap items-center gap-1">
+          {RANGES.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => {
+                setRange(option.id);
+                setHover(null);
+              }}
+              aria-pressed={range === option.id}
+              className={cn(
+                "border px-2 py-0.5 font-mono text-[10px] tracking-[0.08em] transition-colors",
+                range === option.id
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <div className="relative px-4 py-6">
@@ -101,13 +165,17 @@ export function PriceChart({
               <span>{formatPrice(plot.min)}</span>
             </div>
 
-            <div className="mr-10 h-56">
+            <div
+              className="relative mr-10 h-56 cursor-crosshair"
+              onPointerMove={onPointerMove}
+              onPointerLeave={() => setHover(null)}
+            >
               <svg
                 viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
                 preserveAspectRatio="none"
                 className="h-full w-full overflow-visible"
                 role="img"
-                aria-label={`YES price history, ${points.length} trades`}
+                aria-label={`YES price history, ${visible.length} trades`}
               >
                 {gridLines(plot.min, plot.max).map((price) => {
                   const y = VIEW_H - ((price - plot.min) / span) * VIEW_H;
@@ -135,14 +203,46 @@ export function PriceChart({
                   strokeLinejoin="round"
                   strokeLinecap="round"
                 />
-                <circle
-                  cx={VIEW_W}
-                  cy={VIEW_H - (((lastPrice ?? plot.min) - plot.min) / span) * VIEW_H}
-                  r={1.5}
-                  className="fill-signal"
-                  vectorEffect="non-scaling-stroke"
-                />
+
+                {hoverX === null ? (
+                  <circle
+                    cx={VIEW_W}
+                    cy={VIEW_H - (((lastPrice ?? plot.min) - plot.min) / span) * VIEW_H}
+                    r={1.5}
+                    className="fill-signal"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ) : (
+                  <>
+                    <line
+                      x1={hoverX * VIEW_W}
+                      x2={hoverX * VIEW_W}
+                      y1={0}
+                      y2={VIEW_H}
+                      className="stroke-foreground/40"
+                      strokeWidth={1}
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    <circle
+                      cx={hoverX * VIEW_W}
+                      cy={VIEW_H - (((hovered?.yes ?? plot.min) - plot.min) / span) * VIEW_H}
+                      r={2}
+                      className="fill-foreground"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </>
+                )}
               </svg>
+
+              {hovered && hoverX !== null ? (
+                <div
+                  className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 whitespace-nowrap border border-foreground bg-background px-2 py-1 font-mono text-[10px] leading-snug shadow-sm"
+                  style={{ left: `${Math.min(88, Math.max(12, hoverX * 100))}%` }}
+                >
+                  <span className="block text-muted-foreground">{formatDateTime(hovered.t)}</span>
+                  <span className="block">YES {formatPrice(hovered.yes)}</span>
+                </div>
+              ) : null}
             </div>
 
             <div className="mr-10 mt-2 flex justify-between gap-2 font-mono text-[10px] tracking-[0.08em] text-muted-foreground">
@@ -155,13 +255,18 @@ export function PriceChart({
               <span>
                 Vol {formatMoney(volume)} · {trades} {trades === 1 ? "trade" : "trades"}
               </span>
-              <span>{formatPrice(plot.max - plot.min)} range</span>
+              <span>
+                Last {lastPrice === null ? "—" : formatPrice(lastPrice)} ·{" "}
+                {formatPrice(plot.max - plot.min)} range
+              </span>
             </div>
           </>
         ) : (
           <div className="flex h-56 items-center justify-center border border-dashed border-border">
             <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
-              No trades yet — be the first to set a price.
+              {points.length === 0
+                ? "No trades yet — be the first to set a price."
+                : "No trades in this window."}
             </p>
           </div>
         )}
