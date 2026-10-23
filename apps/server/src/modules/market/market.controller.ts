@@ -28,6 +28,16 @@ export const detail = async (req: Request, res: Response) => {
   }
 };
 
+export const history = async (req: Request, res: Response) => {
+  try {
+    const { marketId } = MarketIdParam.parse(req.params);
+    const data = await service.getMarketHistory(marketId);
+    return res.status(200).json(data);
+  } catch (err) {
+    return sendError(res, err);
+  }
+};
+
 export const create = async (req: Request, res: Response) => {
   try {
     const input = CreateMarketSchema.parse(req.body);

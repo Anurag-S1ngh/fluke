@@ -5,9 +5,10 @@ import {
   marketsTable,
   ordersTable,
   positionsTable,
+  tradesTable,
   usersTable,
 } from "@fluke/db/schema/index";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { MarketOutcome, MarketStatus, ResolveMarketInput } from "./market.types";
 
 export const listMarkets = async (status: MarketStatus = "OPEN") => {
@@ -28,6 +29,35 @@ export const getMarketById = async (marketId: string) => {
     throw new AppError("market not found", 404);
   }
   return market;
+};
+
+/**
+ * Price history for the chart. Every trade is converted to the implied YES
+ * price (a NO fill at p means YES traded at 100 - p).
+ */
+export const getMarketHistory = async (marketId: string) => {
+  await getMarketById(marketId);
+
+  const trades = await db
+    .select({
+      createdAt: tradesTable.createdAt,
+      price: tradesTable.price,
+      outcome: tradesTable.outcome,
+      quantity: tradesTable.quantity,
+    })
+    .from(tradesTable)
+    .where(eq(tradesTable.marketId, marketId))
+    .orderBy(asc(tradesTable.createdAt))
+    .limit(500);
+
+  const points = trades.map((trade) => ({
+    t: trade.createdAt.toISOString(),
+    yes: trade.outcome === "YES" ? trade.price : 100 - trade.price,
+  }));
+
+  const volume = trades.reduce((total, trade) => total + trade.price * trade.quantity, 0);
+
+  return { points, volume, trades: trades.length };
 };
 
 export const createMarket = async (input: {

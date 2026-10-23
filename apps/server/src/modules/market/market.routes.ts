@@ -6,6 +6,7 @@ export const marketRouter = Router();
 
 marketRouter.get("/", controller.list);
 marketRouter.get("/:marketId", controller.detail);
+marketRouter.get("/:marketId/history", controller.history);
 marketRouter.post("/", requireAdmin, controller.create);
 marketRouter.patch("/:marketId/publish", requireAdmin, controller.publish);
 marketRouter.patch("/:marketId/close", requireAdmin, controller.close);
