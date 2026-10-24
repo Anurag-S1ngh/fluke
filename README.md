@@ -1,111 +1,222 @@
 # fluke
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Express, and more.
+A play-money prediction market. Every question trades in cents between 1¢ and 99¢, and each winning share pays $1.00 when the question resolves. No real money, no house position, no hidden spread.
 
-## Features
+## What it does
 
-- **TypeScript** - For type safety and improved developer experience
-- **Next.js** - Full-stack React framework
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Express** - Fast, unopinionated web framework
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Oxlint** - Oxlint + Oxfmt (linting & formatting)
-- **Turborepo** - Optimized monorepo build system
+- **Email OTP auth** — sign up or sign in with a one-time code. New accounts start with $1,000 in play money; a daily grant is added on the first verification of each UTC day.
+- **Markets** — write a question, publish it, close the book, then resolve YES/NO or refund every position.
+- **Trading** — limit orders cross the book automatically with price-time priority. Partial fills, cash/share reservation, and no self-trading.
+- **Portfolio** — cash, open and settled positions, resting orders, and cancellation.
+- **Admin desk** — create, publish, close, resolve, refund, and delete markets.
+- **Demo data** — a seeder that builds users, markets, a real trade tape, positions, and ledger history.
 
-## Getting Started
+## Stack
 
-First, install the dependencies:
+- **Web** — Next.js 16 (App Router), React 19, Tailwind CSS, shared shadcn/ui primitives in `packages/ui`
+- **API** — Express 5 on Bun, Zod validation, JWT session cookie
+- **Data** — PostgreSQL with Drizzle ORM; Redis for OTP storage
+- **Email** — Resend for OTP delivery
+- **Tooling** — Turborepo, Oxlint + Oxfmt, Varlock for environment schemas
+
+## Project structure
+
+```
+fluke/
+├── apps/
+│   ├── web/                 # Next.js frontend (:3001)
+│   └── server/              # Express API (:3000, mounted at /api/v1)
+├── packages/
+│   ├── db/                  # Drizzle schema, migrations, and demo seeder
+│   ├── email/               # Resend client and OTP template
+│   ├── redis/               # Redis client
+│   ├── ui/                  # Shared shadcn/ui components and global styles
+│   └── config/              # Shared TypeScript/lint configuration
+├── turbo.json
+└── package.json
+```
+
+Money is stored as **integer cents** (`1250` is $12.50), and prices are integer cents between `1` and `99`.
+
+### API overview
+
+| Area      | Endpoints                                                                                           |
+| --------- | --------------------------------------------------------------------------------------------------- |
+| Auth      | `POST /auth/signup`, `POST /auth/signin`, `POST /auth/verify`, `POST /auth/signout`, `GET /auth/me` |
+| Markets   | `GET /markets?status=`, `GET /markets/:id`, `GET /markets/:id/history`                              |
+| Admin     | `POST /markets`, `PATCH /markets/:id/publish`, `/close`, `/resolve`, `DELETE /markets/:id`          |
+| Orders    | `GET /orders`, `GET /orders/book?marketId=`, `POST /orders`, `DELETE /orders/:id`                   |
+| Positions | `GET /positions`                                                                                    |
+
+Admin routes require a session whose user has the `ADMIN` role.
+
+## Getting started
+
+### Prerequisites
+
+- [Bun](https://bun.sh) 1.4+
+- PostgreSQL
+- Redis
+- A [Resend](https://resend.com) API key and a verified sender address (needed to deliver OTP emails)
+
+### 1. Install dependencies
 
 ```bash
 bun install
 ```
 
-## Database Setup
+The `postinstall` script runs `varlock codegen` to generate each package's typed `env.ts`.
 
-This project uses PostgreSQL with Drizzle ORM.
+### 2. Configure environment
 
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
+`.env` files are gitignored. Each app owns a `.env.schema` that documents its variables; copy those values into local `.env` files.
 
-3. Apply the schema to your database:
+**`apps/server/.env`**
+
+| Variable         | Notes                                                   |
+| ---------------- | ------------------------------------------------------- |
+| `NODE_ENV`       | `development`, `production`, or `test`                  |
+| `CORS_ORIGIN`    | Web origin, e.g. `http://localhost:3001`                |
+| `DATABASE_URL`   | PostgreSQL connection string                            |
+| `REDIS_URL`      | Redis connection string, e.g. `redis://localhost:6379`  |
+| `RESEND_API_KEY` | Resend API key                                          |
+| `EMAIL_FROM`     | Verified sender, e.g. `fluke <no-reply@yourdomain.com>` |
+| `JWT_SECRET`     | Session signing secret, at least 32 characters          |
+
+**`apps/web/.env`**
+
+| Variable                 | Notes                                    |
+| ------------------------ | ---------------------------------------- |
+| `NEXT_PUBLIC_SERVER_URL` | API origin, e.g. `http://localhost:3000` |
+
+After changing any `.env.schema`, regenerate the typed env files:
+
+```bash
+bun run env:generate
+```
+
+### 3. Create the database schema
+
+Apply the committed migrations:
+
+```bash
+bun run db:migrate
+```
+
+For rapid local iteration you can push the schema directly instead:
 
 ```bash
 bun run db:push
 ```
 
-Then, run the development server:
+The shared database packages read `DATABASE_URL` from `apps/server`, so keep that file up to date.
+
+### 4. Seed demo data (optional)
+
+Run from the server app so Varlock loads the right environment:
+
+```bash
+cd apps/server
+bun run db:seed
+```
+
+This creates 14 markets across every status, one admin, nine traders (three of them market makers), a generated price history, resting orders, positions, and a matching ledger. It ends by printing the demo admin's username and email.
+
+- The seed is idempotent: if the demo admin already exists it exits without writing.
+- Rebuild from scratch with `bun run db:seed -- --reset` (removes only seeded users and markets).
+
+To use the admin desk locally, either change `ADMIN` in `packages/db/src/seed.ts` to an inbox you control before seeding, or promote an existing account:
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'you@example.com';
+```
+
+### 5. Run the apps
 
 ```bash
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+- Web: [http://localhost:3001](http://localhost:3001)
+- API: [http://localhost:3000](http://localhost:3000)
 
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
+Or run one at a time:
 
 ```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
+bun run dev:web
+bun run dev:server
 ```
 
-Import shared components like this:
+## Scripts
 
-```tsx
-import { Button } from "@fluke/ui/components/button";
+Run these from the repository root.
+
+| Script                 | Purpose                                              |
+| ---------------------- | ---------------------------------------------------- |
+| `bun run dev`          | Start web and server together                        |
+| `bun run dev:web`      | Start only the Next.js app                           |
+| `bun run dev:server`   | Start only the API                                   |
+| `bun run build`        | Build all apps and packages                          |
+| `bun run check-types`  | Type-check every workspace                           |
+| `bun run check`        | Run Oxlint and format with Oxfmt                     |
+| `bun run format`       | Format with Oxfmt                                    |
+| `bun run db:migrate`   | Apply Drizzle migrations                             |
+| `bun run db:generate`  | Generate a migration from schema changes             |
+| `bun run db:push`      | Push the schema without a migration                  |
+| `bun run db:studio`    | Open Drizzle Studio                                  |
+| `bun run env:generate` | Regenerate typed `env.ts` files after schema changes |
+
+Server-only commands, run from `apps/server`:
+
+| Script                       | Purpose                        |
+| ---------------------------- | ------------------------------ |
+| `bun test`                   | Run the server test suite      |
+| `bun run db:seed`            | Seed demo data                 |
+| `bun run db:seed -- --reset` | Rebuild demo data from scratch |
+
+## Testing
+
+The server has unit/integration tests for auth, order matching, settlement, and positions. They talk to a real PostgreSQL database and Redis, and they **truncate tables between tests**.
+
+The suite refuses to run unless the database name ends in `_test`:
+
+```text
+refusing to run tests against non-test database "fluke" —
+set DATABASE_URL to a database ending in _test
 ```
 
-### Add app-specific blocks
+Run them against a disposable database:
 
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
+```bash
+# create the test database once
+createdb fluke_test
 
-## Environment Configuration
+# point apps/server/.env at it
+# DATABASE_URL=postgres://localhost:5432/fluke_test
 
-Each app owns its environment schema in `.env.schema`. Varlock generates `src/env.ts` during installation; run `bun run env:generate` after changing a schema. Commit schemas, and keep secrets in ignored env files or your deployment platform.
+# from the repository root
+bun run db:push
 
-Import the generated `ENV` accessor in application code. Shared database and auth packages receive configuration or initialized clients from the application. See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
-
-Bun's automatic env loading is disabled in `bunfig.toml`; the framework integration or server bootstrap loads Varlock. Node deployments must include Varlock and its dependencies alongside the app schema.
-
-Run standalone Node/Bun tools that use Varlock from the owning app directory so they load that app's schema and env files. `env:generate` only generates TypeScript files; it does not initialize environment values in a subsequent command.
-
-## Git Hooks and Formatting
-
-- Run checks: `bun run check`
-
-## Project Structure
-
-```
-fluke/
-├── apps/
-│   ├── web/         # Frontend application (Next.js)
-│   └── server/      # Backend API (Express)
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   └── db/          # Database schema & queries
+cd apps/server
+bun test
 ```
 
-## Available Scripts
+Email delivery is mocked in tests, so no Resend key is exercised there.
 
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run check`: Run Oxlint and Oxfmt
+## Environment and secrets
+
+Each app owns an `.env.schema` consumed by [Varlock](https://varlock.dev); the generated `src/env.ts` files are typed. Commit schemas, never `.env` files. Bun's automatic env loading is disabled in `bunfig.toml` — Varlock loads configuration at startup, including in standalone scripts like the seeder and Drizzle config.
+
+## Current limitations
+
+These are known gaps, not undocumented surprises:
+
+- **No scheduled market close.** Trading is blocked once `closesAt` passes, but the market stays `OPEN` and remains on the public list until an admin closes it. There is no background job.
+- **Daily grant requires re-verification.** The grant runs during OTP verification, so a user staying signed in across days will not receive it until their next sign-in.
+- **No OTP rate limiting.** There is no attempt cap or send throttle on `/auth/signup` and `/auth/signin`.
+- **No pagination.** Market, order, and position lists are unpaginated; price history is capped at 2,000 trades.
+- **No CI or deployment configuration.** There is no Dockerfile, pipeline, or log/metrics integration in the repo.
+
+## Built with
+
+Scaffolded with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack).
