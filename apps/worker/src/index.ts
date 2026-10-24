@@ -1,5 +1,6 @@
 import { set } from "@fluke/redis";
 
+import { startJobs } from "./jobs";
 import { redis } from "./services";
 import { closeAll, registerCloser } from "./shutdown";
 
@@ -47,5 +48,6 @@ registerCloser("heartbeat", async () => {
   clearInterval(heartbeatTimer);
 });
 
+await startJobs();
 await heartbeat();
 console.log(`[worker] ready (pid ${process.pid})`);
