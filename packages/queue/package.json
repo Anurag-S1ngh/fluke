@@ -1,0 +1,20 @@
+{
+  "name": "@fluke/queue",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fluke/redis": "workspace:*",
+    "bullmq": "^6.4.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@fluke/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
