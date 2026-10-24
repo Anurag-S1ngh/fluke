@@ -66,9 +66,7 @@ describe("signup", () => {
     expect(ttl).toBeLessThanOrEqual(300);
     expect(enqueued).toHaveLength(1);
     expect(enqueued[0]).toMatchObject({
-      version: 1,
       email,
-      purpose: "signup",
       otp: JSON.parse(stored as string).otp,
     });
     expect(await userRow(email)).toBeUndefined();
@@ -173,7 +171,7 @@ describe("signin and daily grant", () => {
     const value = await get(redis, `otp:${email}`);
     expect(value).not.toBeNull();
     expect(JSON.parse(value as string).username).toBeUndefined();
-    expect(enqueued.at(-1)).toMatchObject({ version: 1, email, purpose: "signin" });
+    expect(enqueued.at(-1)).toMatchObject({ email });
   });
 
   test("signin unknown email throws 400", async () => {

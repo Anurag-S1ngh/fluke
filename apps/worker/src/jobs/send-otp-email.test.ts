@@ -6,10 +6,8 @@ import type { SendOtpEmailPayload } from "@fluke/queue";
 import { createSendOtpEmailProcessor } from "./send-otp-email";
 
 const payload: SendOtpEmailPayload = {
-  version: 1,
   email: "reader@test.fluke",
   otp: "123456",
-  purpose: "signup",
 };
 
 const makeJob = (data: unknown, attemptsMade = 0, attempts = 5) =>
@@ -57,9 +55,7 @@ describe("sendOtpEmail processor", () => {
     const clearOtp = mock(async () => {});
     const process = createSendOtpEmailProcessor({ send, clearOtp });
 
-    await expect(
-      process(makeJob({ version: 1, email: "not-an-email", otp: "12", purpose: "signup" })),
-    ).rejects.toThrow();
+    await expect(process(makeJob({ email: "not-an-email", otp: "12" }))).rejects.toThrow();
 
     expect(send).toHaveBeenCalledTimes(0);
   });

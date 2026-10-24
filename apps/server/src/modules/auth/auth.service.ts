@@ -29,7 +29,7 @@ export const signup = async (username: string, email: string) => {
   const value = JSON.stringify({ username, otp });
   await set(redis, key, value, 300);
   try {
-    await enqueueOtpEmail({ version: 1, email, otp, purpose: "signup" });
+    await enqueueOtpEmail({ email, otp });
   } catch {
     await del(redis, key);
     throw new AppError("Failed to send email", 500);
@@ -148,7 +148,7 @@ export const signin = async (email: string) => {
   const value = JSON.stringify({ otp });
   await set(redis, key, value, 300);
   try {
-    await enqueueOtpEmail({ version: 1, email, otp, purpose: "signin" });
+    await enqueueOtpEmail({ email, otp });
   } catch {
     await del(redis, key);
     throw new AppError("Failed to send email", 500);
