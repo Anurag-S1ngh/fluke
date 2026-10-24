@@ -1,7 +1,4 @@
-type Closer = {
-  name: string;
-  close: () => Promise<unknown>;
-};
+import type { Closer } from "./types";
 
 const closers: Closer[] = [];
 

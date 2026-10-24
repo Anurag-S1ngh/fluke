@@ -7,7 +7,6 @@ import {
   workerOptions,
 } from "@fluke/queue";
 import { ENV } from "../env.server";
-import { clearOtpIfCurrent } from "../otp";
 import { resend } from "../services";
 import { registerCloser } from "../shutdown";
 import { createSendOtpEmailProcessor } from "./send-otp-email";
@@ -30,7 +29,6 @@ const startEmailWorker = () => {
     QUEUE_NAMES.email,
     createSendOtpEmailProcessor({
       send: (payload) => sendOtpEmail(resend, ENV, payload.email, payload.otp),
-      clearOtp: clearOtpIfCurrent,
     }),
     {
       ...workerOptions(workerConnection),
