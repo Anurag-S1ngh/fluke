@@ -2,7 +2,6 @@ import { Queue, Worker } from "bullmq";
 
 import { sendOtpEmail } from "@fluke/email";
 import {
-  closeExpiredMarketsPayloadSchema,
   createConnection,
   DEFAULT_JOB_OPTIONS,
   JOB_NAMES,
@@ -51,8 +50,6 @@ const startMaintenanceWorker = async () => {
   const maintenanceWorker = new Worker(
     QUEUE_NAMES.maintenance,
     async (job) => {
-      closeExpiredMarketsPayloadSchema.parse(job.data);
-
       switch (job.name) {
         case JOB_NAMES.closeExpiredMarkets:
           return closeExpiredMarkets();
@@ -79,7 +76,6 @@ const startMaintenanceWorker = async () => {
     { every: AUTO_CLOSE_INTERVAL_MS },
     {
       name: JOB_NAMES.closeExpiredMarkets,
-      data: { version: 1 },
       opts: {
         attempts: 3,
         backoff: { type: "exponential", delay: 30_000 },
