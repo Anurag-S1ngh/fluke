@@ -360,8 +360,8 @@ export const listMyOrders = async (userId: string, marketId?: string) => {
     .orderBy(desc(ordersTable.createdAt));
 };
 
-export const getOrderBook = async (marketId: string) => {
-  return db
+export const getOrderBook = async (marketId: string, depth = 20) => {
+  const levels = await db
     .select({
       side: ordersTable.side,
       outcome: ordersTable.outcome,
@@ -379,4 +379,20 @@ export const getOrderBook = async (marketId: string) => {
     )
     .groupBy(ordersTable.side, ordersTable.outcome, ordersTable.price)
     .orderBy(desc(ordersTable.price));
+
+  const groups = new Map<string, typeof levels>();
+  for (const level of levels) {
+    const key = `${level.outcome}:${level.side}`;
+    const group = groups.get(key);
+    if (group) {
+      group.push(level);
+    } else {
+      groups.set(key, [level]);
+    }
+  }
+
+  return [...groups.values()].flatMap((group) => {
+    const sorted = [...group].sort((a, b) => b.price - a.price);
+    return group[0]?.side === "ASK" ? sorted.slice(-depth).reverse() : sorted.slice(0, depth);
+  });
 };

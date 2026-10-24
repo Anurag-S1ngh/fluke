@@ -24,4 +24,5 @@ export const ListOrdersQuery = z.object({
 
 export const BookQuery = z.object({
   marketId: z.uuid("invalid market id"),
+  depth: z.coerce.number().int().min(1).max(50).default(20),
 });

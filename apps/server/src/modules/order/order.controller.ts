@@ -44,8 +44,8 @@ export const listMine = async (req: Request, res: Response) => {
 
 export const book = async (req: Request, res: Response) => {
   try {
-    const { marketId } = BookQuery.parse(req.query);
-    const orders = await service.getOrderBook(marketId);
+    const { marketId, depth } = BookQuery.parse(req.query);
+    const orders = await service.getOrderBook(marketId, depth);
     return res.status(200).json({ book: orders });
   } catch (err) {
     return sendError(res, err);
