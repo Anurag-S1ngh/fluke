@@ -1,18 +1,15 @@
 import type { JobsOptions } from "bullmq";
-
 import type { RedisClient } from "@fluke/redis";
 
 export const QUEUE_PREFIX = "fluke";
 
 export const QUEUE_NAMES = {
   email: "email",
-  maintenance: "maintenance",
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 
 export const JOB_NAMES = {
-  closeExpiredMarkets: "close-expired-markets",
   sendOtpEmail: "send-otp-email",
 } as const;
 

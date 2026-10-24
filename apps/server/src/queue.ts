@@ -1,5 +1,4 @@
 import { Queue } from "bullmq";
-
 import {
   createConnection,
   DEFAULT_JOB_OPTIONS,
@@ -8,7 +7,6 @@ import {
   queueOptions,
   type SendOtpEmailPayload,
 } from "@fluke/queue";
-
 import { ENV } from "./env.server";
 
 const connection = createConnection(ENV);

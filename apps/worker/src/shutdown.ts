@@ -5,10 +5,6 @@ type Closer = {
 
 const closers: Closer[] = [];
 
-/**
- * Closers run in reverse registration order, so resources registered later
- * (workers, queues) shut down before the connections they depend on.
- */
 export const registerCloser = (name: string, close: () => Promise<unknown>) => {
   closers.push({ name, close });
 };

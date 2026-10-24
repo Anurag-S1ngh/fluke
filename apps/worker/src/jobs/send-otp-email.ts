@@ -1,5 +1,4 @@
 import type { Job } from "bullmq";
-
 import { type SendOtpEmailPayload, sendOtpEmailPayloadSchema } from "@fluke/queue";
 
 export type SendOtpEmailResult = {
