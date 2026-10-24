@@ -20,7 +20,7 @@ import { PortfolioSummary } from "./portfolio-summary";
 import { PositionsTable, type PositionTab } from "./positions-table";
 
 export function PortfolioView() {
-  const { user, loading: authLoading, refresh } = useAuth();
+  const { user, loading: authLoading, updateBalance } = useAuth();
   const [tab, setTab] = React.useState<PositionTab>("live");
   const [cancellingId, setCancellingId] = React.useState<string | null>(null);
 
@@ -43,9 +43,12 @@ export function PortfolioView() {
   const cancelOrder = async (order: Order) => {
     setCancellingId(order.id);
     try {
-      await api(`/orders/${order.id}`, { method: "DELETE" });
+      const { balance } = await api<{ order: Order; balance: number }>(`/orders/${order.id}`, {
+        method: "DELETE",
+      });
+      updateBalance(balance);
       toast.success("Order cancelled.");
-      await Promise.all([orders.reload(), positions.reload(), refresh()]);
+      await Promise.all([orders.reload(), positions.reload()]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not cancel the order.");
     } finally {

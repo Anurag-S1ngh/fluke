@@ -97,7 +97,7 @@ describe("placeOrder", () => {
     const trader = await createUser(10_000);
     const market = await createMarket();
 
-    const order = await placeOrder(trader.id, {
+    const { order } = await placeOrder(trader.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -140,7 +140,7 @@ describe("placeOrder", () => {
     const market = await createMarket();
     await createPosition(trader.id, market.id, "YES", 100, 40);
 
-    const order = await placeOrder(trader.id, {
+    const { order } = await placeOrder(trader.id, {
       marketId: market.id,
       side: "ASK",
       outcome: "YES",
@@ -218,7 +218,7 @@ describe("matching engine", () => {
     const buyer = await createUser(100_000);
     const market = await createMarket();
     await createPosition(seller.id, market.id, "YES", 100, 40);
-    const ask = await placeOrder(seller.id, {
+    const { order: ask } = await placeOrder(seller.id, {
       marketId: market.id,
       side: "ASK",
       outcome: "YES",
@@ -226,7 +226,7 @@ describe("matching engine", () => {
       quantity: 10,
     });
 
-    const bid = await placeOrder(buyer.id, {
+    const { order: bid } = await placeOrder(buyer.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -263,14 +263,14 @@ describe("matching engine", () => {
     const buyer = await createUser(100_000);
     const market = await createMarket();
     await createPosition(seller.id, market.id, "YES", 200, 40);
-    const ask1 = await placeOrder(seller.id, {
+    const { order: ask1 } = await placeOrder(seller.id, {
       marketId: market.id,
       side: "ASK",
       outcome: "YES",
       price: 60,
       quantity: 60,
     });
-    const ask2 = await placeOrder(seller.id, {
+    const { order: ask2 } = await placeOrder(seller.id, {
       marketId: market.id,
       side: "ASK",
       outcome: "YES",
@@ -278,7 +278,7 @@ describe("matching engine", () => {
       quantity: 60,
     });
 
-    const bid = await placeOrder(buyer.id, {
+    const { order: bid } = await placeOrder(buyer.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -312,7 +312,7 @@ describe("matching engine", () => {
       price: 60,
       quantity: 10,
     });
-    const cheapAsk = await placeOrder(seller.id, {
+    const { order: cheapAsk } = await placeOrder(seller.id, {
       marketId: market.id,
       side: "ASK",
       outcome: "YES",
@@ -345,7 +345,7 @@ describe("matching engine", () => {
       quantity: 10,
     });
 
-    const bid = await placeOrder(trader.id, {
+    const { order: bid } = await placeOrder(trader.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -403,7 +403,7 @@ describe("cancelOrder", () => {
   test("cancelling an OPEN BID returns the full reservation", async () => {
     const trader = await createUser(10_000);
     const market = await createMarket();
-    const order = await placeOrder(trader.id, {
+    const { order } = await placeOrder(trader.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -411,7 +411,7 @@ describe("cancelOrder", () => {
       quantity: 10,
     });
 
-    const cancelled = await cancelOrder(trader.id, order.id);
+    const { order: cancelled } = await cancelOrder(trader.id, order.id);
 
     expect(cancelled.status).toBe("CANCELLED");
     const balances = await balancesOf(trader.id);
@@ -431,7 +431,7 @@ describe("cancelOrder", () => {
       price: 60,
       quantity: 10,
     });
-    const bid = await placeOrder(buyer.id, {
+    const { order: bid } = await placeOrder(buyer.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -451,7 +451,7 @@ describe("cancelOrder", () => {
     const owner = await createUser(10_000);
     const stranger = await createUser();
     const market = await createMarket();
-    const order = await placeOrder(owner.id, {
+    const { order } = await placeOrder(owner.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -477,7 +477,7 @@ describe("cancelOrder", () => {
       price: 60,
       quantity: 10,
     });
-    const bid = await placeOrder(buyer.id, {
+    const { order: bid } = await placeOrder(buyer.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",
@@ -568,7 +568,7 @@ describe("getOrderBook", () => {
   test("excludes filled and cancelled orders", async () => {
     const alice = await createUser(100_000);
     const market = await createMarket();
-    const order = await placeOrder(alice.id, {
+    const { order } = await placeOrder(alice.id, {
       marketId: market.id,
       side: "BID",
       outcome: "YES",

@@ -9,8 +9,8 @@ export const place = async (req: Request, res: Response) => {
     if (!req.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    const order = await service.placeOrder(req.userId, input);
-    return res.status(201).json({ order });
+    const { order, balance } = await service.placeOrder(req.userId, input);
+    return res.status(201).json({ order, balance });
   } catch (err) {
     return sendError(res, err);
   }
@@ -22,8 +22,8 @@ export const cancel = async (req: Request, res: Response) => {
     if (!req.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    const order = await service.cancelOrder(req.userId, orderId);
-    return res.status(200).json({ order });
+    const { order, balance } = await service.cancelOrder(req.userId, orderId);
+    return res.status(200).json({ order, balance });
   } catch (err) {
     return sendError(res, err);
   }

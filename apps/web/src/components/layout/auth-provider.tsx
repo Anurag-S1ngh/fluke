@@ -10,6 +10,7 @@ interface AuthState {
   user: Me | null;
   loading: boolean;
   refresh: () => Promise<void>;
+  updateBalance: (balance: number) => void;
   signOut: () => Promise<void>;
 }
 
@@ -34,6 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
+  const updateBalance = React.useCallback((balance: number) => {
+    setUser((current) => (current ? { ...current, balance } : current));
+  }, []);
+
   const signOut = React.useCallback(async () => {
     try {
       await api("/auth/signout", { method: "POST" });
@@ -47,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, signOut }}>
+    <AuthContext.Provider value={{ user, loading, refresh, updateBalance, signOut }}>
       {children}
     </AuthContext.Provider>
   );

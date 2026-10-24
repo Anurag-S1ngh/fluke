@@ -27,7 +27,7 @@ export function OrderTicket({
   shares: Record<Outcome, number>;
   onTraded: () => Promise<void>;
 }) {
-  const { user } = useAuth();
+  const { user, updateBalance } = useAuth();
   const [outcome, setOutcome] = React.useState<Outcome>("YES");
   const [side, setSide] = React.useState<Side>("BID");
   const [price, setPrice] = React.useState("");
@@ -114,7 +114,7 @@ export function OrderTicket({
     setBusy(true);
     setError(null);
     try {
-      const { order } = await api<{ order: Order }>("/orders", {
+      const { order, balance } = await api<{ order: Order; balance: number }>("/orders", {
         method: "POST",
         body: JSON.stringify({
           marketId: market.id,
@@ -131,6 +131,7 @@ export function OrderTicket({
             ? "Order partially filled."
             : "Order placed on the book.",
       );
+      updateBalance(balance);
       setQuantity("");
       await onTraded();
     } catch (err) {

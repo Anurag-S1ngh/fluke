@@ -43,7 +43,7 @@ function computeBest(book: BookLevel[]): BestPrices {
 }
 
 export function MarketView({ marketId }: { marketId: string }) {
-  const { user, refresh: refreshMe } = useAuth();
+  const { user, updateBalance } = useAuth();
   const [cancellingId, setCancellingId] = React.useState<string | null>(null);
   const [range, setRange] = React.useState<HistoryRange>("ALL");
 
@@ -84,20 +84,17 @@ export function MarketView({ marketId }: { marketId: string }) {
   }, [marketId, positions.data]);
 
   const reloadTrading = React.useCallback(async () => {
-    await Promise.all([
-      book.reload(),
-      history.reload(),
-      orders.reload(),
-      positions.reload(),
-      refreshMe(),
-    ]);
-  }, [book.reload, history.reload, orders.reload, positions.reload, refreshMe]);
+    await Promise.all([book.reload(), history.reload(), orders.reload(), positions.reload()]);
+  }, [book.reload, history.reload, orders.reload, positions.reload]);
 
   const cancelOrder = React.useCallback(
     async (order: Order) => {
       setCancellingId(order.id);
       try {
-        await api(`/orders/${order.id}`, { method: "DELETE" });
+        const { balance } = await api<{ order: Order; balance: number }>(`/orders/${order.id}`, {
+          method: "DELETE",
+        });
+        updateBalance(balance);
         toast.success("Order cancelled.");
         await reloadTrading();
       } catch (err) {
@@ -106,7 +103,7 @@ export function MarketView({ marketId }: { marketId: string }) {
         setCancellingId(null);
       }
     },
-    [reloadTrading],
+    [reloadTrading, updateBalance],
   );
 
   if (market.loading) {

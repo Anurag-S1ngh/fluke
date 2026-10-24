@@ -242,15 +242,24 @@ export const placeOrder = async (userId: string, input: PlaceOrderInput) => {
       remaining -= fill;
     }
     const filledQuantity = order.quantity - remaining;
+    const [account] = await tx
+      .select({ balance: usersTable.balance })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
     return {
-      ...order,
-      filledQuantity,
-      status:
-        filledQuantity >= order.quantity
-          ? ("FILLED" as const)
-          : filledQuantity > 0
-            ? ("PARTIALLY_FILLED" as const)
-            : ("OPEN" as const),
+      order: {
+        ...order,
+        filledQuantity,
+        status:
+          filledQuantity >= order.quantity
+            ? ("FILLED" as const)
+            : filledQuantity > 0
+              ? ("PARTIALLY_FILLED" as const)
+              : ("OPEN" as const),
+      },
+      balance: account?.balance ?? 0,
     };
   });
 };
@@ -331,7 +340,12 @@ export const cancelOrder = async (userId: string, orderId: string) => {
     if (!updated) {
       throw new AppError("only open orders can be cancelled", 400);
     }
-    return updated;
+    const [account] = await tx
+      .select({ balance: usersTable.balance })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+    return { order: updated, balance: account?.balance ?? 0 };
   });
 };
 
