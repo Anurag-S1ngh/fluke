@@ -5,27 +5,26 @@ import { db, redis } from "@/services";
 import { AppError } from "@/types/error";
 import { get, set } from "@fluke/redis";
 import { ledgerTable, usersTable } from "@fluke/db/schema/index";
+import type { SendOtpEmailPayload } from "@fluke/queue";
 import { assertTestDatabase, resetDatabase } from "@/test/db";
 import { DAILY_GRANT_AMOUNT, me, signin, signup, startOfTodayUTC, verify } from "./auth.service";
 
-let emailShouldFail = false;
-mock.module("@fluke/email", () => ({
-  // Hoisted: services.ts also imports this package at load, so the factory
-  // must stub createEmailClient too. The stub client is only ever passed
-  // back into the mocked sendOtpEmail, which ignores it.
-  createEmailClient: () => ({}),
-  default: () => ({}),
-  sendOtpEmail: mock(async () => {
-    if (emailShouldFail) {
-      throw new Error("smtp down");
+let enqueueShouldFail = false;
+const enqueued: SendOtpEmailPayload[] = [];
+
+mock.module("@/queue", () => ({
+  enqueueOtpEmail: mock(async (payload: SendOtpEmailPayload) => {
+    if (enqueueShouldFail) {
+      throw new Error("redis down");
     }
-    return { id: "test-email-id" };
+    enqueued.push(payload);
   }),
 }));
 
 beforeAll(assertTestDatabase);
 beforeEach(async () => {
-  emailShouldFail = false;
+  enqueueShouldFail = false;
+  enqueued.length = 0;
   await resetDatabase();
   const keys = await redis.keys("otp:*");
   if (keys.length > 0) {
@@ -54,7 +53,7 @@ const ledgerFor = (userId: string) =>
   db.select().from(ledgerTable).where(eq(ledgerTable.userId, userId));
 
 describe("signup", () => {
-  test("happy path stores OTP with TTL and sends email, creates no user", async () => {
+  test("happy path stores OTP with TTL and enqueues the email, creates no user", async () => {
     const { username, email } = nextIdentity();
 
     await signup(username, email);
@@ -65,6 +64,13 @@ describe("signup", () => {
     const ttl = await redis.ttl(`otp:${email}`);
     expect(ttl).toBeGreaterThan(0);
     expect(ttl).toBeLessThanOrEqual(300);
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0]).toMatchObject({
+      version: 1,
+      email,
+      purpose: "signup",
+      otp: JSON.parse(stored as string).otp,
+    });
     expect(await userRow(email)).toBeUndefined();
   });
 
@@ -91,9 +97,9 @@ describe("signup", () => {
     expect(await get(redis, `otp:${otherEmail}`)).toBeNull();
   });
 
-  test("email failure throws 500 and rolls back the OTP", async () => {
+  test("enqueue failure throws 500 and rolls back the OTP", async () => {
     const { username, email } = nextIdentity();
-    emailShouldFail = true;
+    enqueueShouldFail = true;
 
     const err = await signup(username, email).catch((e: unknown) => e);
 
@@ -167,6 +173,7 @@ describe("signin and daily grant", () => {
     const value = await get(redis, `otp:${email}`);
     expect(value).not.toBeNull();
     expect(JSON.parse(value as string).username).toBeUndefined();
+    expect(enqueued.at(-1)).toMatchObject({ version: 1, email, purpose: "signin" });
   });
 
   test("signin unknown email throws 400", async () => {

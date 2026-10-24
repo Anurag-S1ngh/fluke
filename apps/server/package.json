@@ -14,8 +14,9 @@
   },
   "dependencies": {
     "@fluke/db": "workspace:*",
-    "@fluke/email": "workspace:*",
+    "@fluke/queue": "workspace:*",
     "@fluke/redis": "workspace:*",
+    "bullmq": "^6.4.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "drizzle-orm": "^1.0.0-rc.4",

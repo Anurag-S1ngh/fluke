@@ -1,11 +1,10 @@
-import { ENV } from "@/env.server";
-import { db, redis, resend } from "@/services";
+import { db, redis } from "@/services";
 import { AppError } from "@/types/error";
 import { generateOTP } from "@/util/generate-otp";
 import { ledgerTable, usersTable } from "@fluke/db/schema/index";
-import { sendOtpEmail } from "@fluke/email";
 import { del, get, set } from "@fluke/redis";
 import { eq, sql } from "drizzle-orm";
+import { enqueueOtpEmail } from "@/queue";
 import type { AuthUser, OTPPayload } from "./auth.types";
 
 export const DAILY_GRANT_AMOUNT = 100000; // $1000.00 in cents
@@ -30,7 +29,7 @@ export const signup = async (username: string, email: string) => {
   const value = JSON.stringify({ username, otp });
   await set(redis, key, value, 300);
   try {
-    await sendOtpEmail(resend, ENV, email, otp);
+    await enqueueOtpEmail({ version: 1, email, otp, purpose: "signup" });
   } catch {
     await del(redis, key);
     throw new AppError("Failed to send email", 500);
@@ -149,7 +148,7 @@ export const signin = async (email: string) => {
   const value = JSON.stringify({ otp });
   await set(redis, key, value, 300);
   try {
-    await sendOtpEmail(resend, ENV, email, otp);
+    await enqueueOtpEmail({ version: 1, email, otp, purpose: "signin" });
   } catch {
     await del(redis, key);
     throw new AppError("Failed to send email", 500);
