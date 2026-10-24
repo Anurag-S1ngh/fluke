@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HISTORY_RANGES } from "./market.types";
 
 export const MarketStatusSchema = z.enum(["DRAFT", "OPEN", "CLOSED", "RESOLVED", "REFUND"]);
 
@@ -17,6 +18,10 @@ export const MarketIdParam = z.object({
 
 export const ListMarketsQuery = z.object({
   status: MarketStatusSchema.optional(),
+});
+
+export const HistoryQuery = z.object({
+  range: z.enum(HISTORY_RANGES).default("ALL"),
 });
 
 export const ResolveMarketSchema = z

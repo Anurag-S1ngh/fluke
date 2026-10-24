@@ -4,21 +4,19 @@ import { cn } from "@fluke/ui/lib/utils";
 import * as React from "react";
 
 import { formatDate, formatDateTime, formatMoney, formatPrice } from "@/lib/format";
-import type { MarketHistoryPoint } from "@/lib/types";
+import type { HistoryRange, MarketHistoryPoint } from "@/lib/types";
 
 const VIEW_W = 100;
 const VIEW_H = 40;
 
-const RANGES = [
-  { id: "1H", label: "1H", ms: 60 * 60 * 1000 },
-  { id: "6H", label: "6H", ms: 6 * 60 * 60 * 1000 },
-  { id: "1D", label: "1D", ms: 24 * 60 * 60 * 1000 },
-  { id: "1W", label: "1W", ms: 7 * 24 * 60 * 60 * 1000 },
-  { id: "1M", label: "1M", ms: 30 * 24 * 60 * 60 * 1000 },
-  { id: "ALL", label: "All", ms: null },
-] as const;
-
-type RangeId = (typeof RANGES)[number]["id"];
+const RANGES: { id: HistoryRange; label: string }[] = [
+  { id: "1H", label: "1H" },
+  { id: "6H", label: "6H" },
+  { id: "1D", label: "1D" },
+  { id: "1W", label: "1W" },
+  { id: "1M", label: "1M" },
+  { id: "ALL", label: "All" },
+];
 
 type Plot = {
   line: string;
@@ -32,14 +30,6 @@ type Plot = {
 /** The price axis is always the full contract range: $0.00 to $1.00. */
 const AXIS_MIN = 0;
 const AXIS_MAX = 100;
-
-function windowPoints(points: MarketHistoryPoint[], range: RangeId) {
-  const ms = RANGES.find((option) => option.id === range)?.ms ?? null;
-  if (ms === null || points.length === 0) return points;
-
-  const end = new Date(points[points.length - 1]?.t as string).getTime();
-  return points.filter((point) => new Date(point.t).getTime() >= end - ms);
-}
 
 function buildPlot(points: MarketHistoryPoint[]): Plot | null {
   if (points.length === 0) {
@@ -96,17 +86,24 @@ export function PriceChart({
   loading,
   trades,
   volume,
+  range,
+  onRangeChange,
 }: {
   points: MarketHistoryPoint[];
   loading: boolean;
   trades: number;
   volume: number;
+  range: HistoryRange;
+  onRangeChange: (range: HistoryRange) => void;
 }) {
-  const [range, setRange] = React.useState<RangeId>("ALL");
   const [hover, setHover] = React.useState<number | null>(null);
 
-  const visible = React.useMemo(() => windowPoints(points, range), [points, range]);
-  const plot = React.useMemo(() => buildPlot(visible), [visible]);
+  React.useEffect(() => {
+    setHover(null);
+  }, [range]);
+
+  const visible = points;
+  const plot = React.useMemo(() => buildPlot(points), [points]);
   const lastPrice = visible.at(-1)?.yes ?? null;
   const yOfPrice = (value: number) =>
     VIEW_H - ((value - AXIS_MIN) / (AXIS_MAX - AXIS_MIN)) * VIEW_H;
@@ -142,7 +139,7 @@ export function PriceChart({
               key={option.id}
               type="button"
               onClick={() => {
-                setRange(option.id);
+                onRangeChange(option.id);
                 setHover(null);
               }}
               aria-pressed={range === option.id}
@@ -271,7 +268,7 @@ export function PriceChart({
         ) : (
           <div className="flex h-56 items-center justify-center border border-dashed border-border">
             <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
-              {points.length === 0
+              {range === "ALL"
                 ? "No trades yet — be the first to set a price."
                 : "No trades in this window."}
             </p>

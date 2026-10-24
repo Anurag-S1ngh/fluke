@@ -5,6 +5,10 @@ export type MarketStatus = typeof marketsTable.$inferSelect.status;
 
 export type MarketOutcome = (typeof outcomeEnum.enumValues)[number];
 
+export const HISTORY_RANGES = ["1H", "6H", "1D", "1W", "1M", "ALL"] as const;
+
+export type HistoryRange = (typeof HISTORY_RANGES)[number];
+
 export interface ResolveMarketInput {
   outcome?: MarketOutcome;
   refund?: boolean;

@@ -3,6 +3,7 @@ import { sendError } from "@/util/respond";
 import * as service from "./market.service";
 import {
   CreateMarketSchema,
+  HistoryQuery,
   ListMarketsQuery,
   MarketIdParam,
   ResolveMarketSchema,
@@ -31,7 +32,8 @@ export const detail = async (req: Request, res: Response) => {
 export const history = async (req: Request, res: Response) => {
   try {
     const { marketId } = MarketIdParam.parse(req.params);
-    const data = await service.getMarketHistory(marketId);
+    const { range } = HistoryQuery.parse(req.query);
+    const data = await service.getMarketHistory(marketId, range);
     return res.status(200).json(data);
   } catch (err) {
     return sendError(res, err);

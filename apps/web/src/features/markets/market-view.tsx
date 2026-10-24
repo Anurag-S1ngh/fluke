@@ -15,7 +15,15 @@ import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { StatusTag } from "@/components/ui/status-tag";
 import { api } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
-import type { BookLevel, Market, MarketHistory, Order, Outcome, Position } from "@/lib/types";
+import type {
+  BookLevel,
+  HistoryRange,
+  Market,
+  MarketHistory,
+  Order,
+  Outcome,
+  Position,
+} from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
 import { PriceChart } from "./price-chart";
@@ -37,6 +45,7 @@ function computeBest(book: BookLevel[]): BestPrices {
 export function MarketView({ marketId }: { marketId: string }) {
   const { user, refresh: refreshMe } = useAuth();
   const [cancellingId, setCancellingId] = React.useState<string | null>(null);
+  const [range, setRange] = React.useState<HistoryRange>("ALL");
 
   const market = useAsync(`market:${marketId}`, () =>
     api<{ market: Market }>(`/markets/${marketId}`),
@@ -46,8 +55,8 @@ export function MarketView({ marketId }: { marketId: string }) {
     api<{ book: BookLevel[] }>(`/orders/book?marketId=${marketId}`),
   );
 
-  const history = useAsync<MarketHistory>(`history:${marketId}`, () =>
-    api<MarketHistory>(`/markets/${marketId}/history`),
+  const history = useAsync<MarketHistory>(`history:${marketId}:${range}`, () =>
+    api<MarketHistory>(`/markets/${marketId}/history?range=${range}`),
   );
 
   const orders = useAsync(`orders:${user?.id ?? "guest"}:${marketId}`, () =>
@@ -179,6 +188,8 @@ export function MarketView({ marketId }: { marketId: string }) {
             loading={history.loading}
             trades={history.data?.trades ?? 0}
             volume={history.data?.volume ?? 0}
+            range={range}
+            onRangeChange={setRange}
           />
 
           <OrderBook book={levels} loading={book.loading} lastPrice={lastPrice} />

@@ -68,6 +68,8 @@ export interface MarketHistoryPoint {
   yes: number;
 }
 
+export type HistoryRange = "1H" | "6H" | "1D" | "1W" | "1M" | "ALL";
+
 export interface MarketHistory {
   points: MarketHistoryPoint[];
   volume: number;

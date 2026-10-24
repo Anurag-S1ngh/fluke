@@ -8,8 +8,8 @@ import {
   tradesTable,
   usersTable,
 } from "@fluke/db/schema/index";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import type { MarketOutcome, MarketStatus, ResolveMarketInput } from "./market.types";
+import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import type { HistoryRange, MarketOutcome, MarketStatus, ResolveMarketInput } from "./market.types";
 
 export const listMarkets = async (status: MarketStatus = "OPEN") => {
   return db
@@ -31,12 +31,43 @@ export const getMarketById = async (marketId: string) => {
   return market;
 };
 
+const HISTORY_RANGE_MS: Record<HistoryRange, number | null> = {
+  "1H": 60 * 60 * 1000,
+  "6H": 6 * 60 * 60 * 1000,
+  "1D": 24 * 60 * 60 * 1000,
+  "1W": 7 * 24 * 60 * 60 * 1000,
+  "1M": 30 * 24 * 60 * 60 * 1000,
+  ALL: null,
+};
+
+const MAX_HISTORY_POINTS = 240;
+
+const downsample = <T>(points: T[], max: number): T[] => {
+  if (points.length <= max) {
+    return points;
+  }
+
+  const step = points.length / max;
+  const sampled: T[] = [];
+  for (let index = 0; index < max; index += 1) {
+    const end = Math.min(points.length - 1, Math.floor((index + 1) * step) - 1);
+    const point = points[end];
+    if (point !== undefined) {
+      sampled.push(point);
+    }
+  }
+  return sampled;
+};
+
 /**
  * Price history for the chart. Every trade is converted to the implied YES
  * price (a NO fill at p means YES traded at 100 - p).
  */
-export const getMarketHistory = async (marketId: string) => {
+export const getMarketHistory = async (marketId: string, range: HistoryRange = "ALL") => {
   await getMarketById(marketId);
+
+  const span = HISTORY_RANGE_MS[range];
+  const since = span === null ? null : new Date(Date.now() - span);
 
   const trades = await db
     .select({
@@ -46,18 +77,26 @@ export const getMarketHistory = async (marketId: string) => {
       quantity: tradesTable.quantity,
     })
     .from(tradesTable)
-    .where(eq(tradesTable.marketId, marketId))
+    .where(
+      since
+        ? and(eq(tradesTable.marketId, marketId), gte(tradesTable.createdAt, since))
+        : eq(tradesTable.marketId, marketId),
+    )
     .orderBy(asc(tradesTable.createdAt))
     .limit(2000);
 
-  const points = trades.map((trade) => ({
+  const allPoints = trades.map((trade) => ({
     t: trade.createdAt.toISOString(),
     yes: trade.outcome === "YES" ? trade.price : 100 - trade.price,
   }));
 
   const volume = trades.reduce((total, trade) => total + trade.price * trade.quantity, 0);
 
-  return { points, volume, trades: trades.length };
+  return {
+    points: downsample(allPoints, MAX_HISTORY_POINTS),
+    volume,
+    trades: trades.length,
+  };
 };
 
 export const createMarket = async (input: {
