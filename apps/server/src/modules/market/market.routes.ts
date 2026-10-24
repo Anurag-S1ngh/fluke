@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { requireAdmin } from "@/middleware/admin";
+import { requireAdmin, requireAdminForDraft } from "@/middleware/admin";
 import * as controller from "./market.controller";
 
 export const marketRouter = Router();
 
-marketRouter.get("/", controller.list);
+marketRouter.get("/", requireAdminForDraft, controller.list);
 marketRouter.get("/:marketId", controller.detail);
 marketRouter.get("/:marketId/history", controller.history);
 marketRouter.post("/", requireAdmin, controller.create);

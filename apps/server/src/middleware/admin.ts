@@ -24,3 +24,10 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
   req.userId = userId;
   return next();
 };
+
+export const requireAdminForDraft = async (req: Request, res: Response, next: NextFunction) => {
+  if (req.query.status !== "DRAFT") {
+    return next();
+  }
+  return requireAdmin(req, res, next);
+};
