@@ -1,10 +1,17 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import helmet from "helmet";
 import { ENV } from "./env.server";
 import { router } from "./router";
 
 const app = express();
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 
 app.use(
   cors({
