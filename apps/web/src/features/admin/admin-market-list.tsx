@@ -15,7 +15,7 @@ import { api } from "@/lib/api";
 import { formatDateTime, marketStatusLabel } from "@/lib/format";
 import type { MarketStatus, MarketSummary } from "@/lib/types";
 
-const statuses: MarketStatus[] = ["DRAFT", "OPEN", "CLOSED"];
+const statuses: MarketStatus[] = ["DRAFT", "OPEN", "CLOSED", "RESOLVED", "REFUND"];
 
 export function AdminMarketList({
   status,
@@ -150,7 +150,11 @@ export function AdminMarketList({
                 <div className="flex flex-wrap items-center gap-3">
                   <StatusTag status={market.status} />
                   <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
-                    Closes {formatDateTime(market.closesAt)}
+                    {market.status === "RESOLVED" && market.outcome
+                      ? `Resolved ${market.outcome}`
+                      : market.status === "REFUND"
+                        ? "Refunded at cost"
+                        : `Closes ${formatDateTime(market.closesAt)}`}
                   </span>
                 </div>
                 <Link

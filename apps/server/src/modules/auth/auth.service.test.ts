@@ -209,7 +209,21 @@ describe("me", () => {
       id: user.id,
       username,
       email,
+      role: "USER",
     });
+  });
+
+  test("returns the admin role", async () => {
+    const { username, email } = nextIdentity();
+    const [admin] = await db
+      .insert(usersTable)
+      .values({ username, email, role: "ADMIN" })
+      .returning();
+    if (!admin) throw new Error("fixture failed: admin");
+
+    const found = await me(admin.id);
+
+    expect(found.role).toBe("ADMIN");
   });
 
   test("unknown id throws 400", async () => {

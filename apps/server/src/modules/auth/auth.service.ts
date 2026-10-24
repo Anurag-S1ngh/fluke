@@ -70,6 +70,7 @@ export const verify = async (email: string, userOTP: string): Promise<{ user: Au
           email: usersTable.email,
           username: usersTable.username,
           balance: usersTable.balance,
+          role: usersTable.role,
         });
       if (!created) {
         throw new AppError("failed to create user", 500);
@@ -109,6 +110,7 @@ export const verify = async (email: string, userOTP: string): Promise<{ user: Au
             email: usersTable.email,
             username: usersTable.username,
             balance: usersTable.balance,
+            role: usersTable.role,
           });
         if (!updated) {
           throw new AppError("user does not exist", 400);
@@ -126,6 +128,7 @@ export const verify = async (email: string, userOTP: string): Promise<{ user: Au
         email: existing.email,
         username: existing.username,
         balance: existing.balance,
+        role: existing.role,
       };
     });
   }
@@ -153,13 +156,14 @@ export const signin = async (email: string) => {
   }
 };
 
-export const me = async (userId: string) => {
+export const me = async (userId: string): Promise<AuthUser> => {
   const [user] = await db
     .select({
       id: usersTable.id,
       username: usersTable.username,
       email: usersTable.email,
       balance: usersTable.balance,
+      role: usersTable.role,
     })
     .from(usersTable)
     .where(eq(usersTable.id, userId))

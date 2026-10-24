@@ -7,6 +7,7 @@ export interface Me {
   username: string;
   email: string;
   balance: number;
+  role: "ADMIN" | "USER";
 }
 
 export interface MarketSummary {

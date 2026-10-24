@@ -16,8 +16,7 @@ import { useAsync } from "@/lib/use-async";
 import { AdminMarketList } from "./admin-market-list";
 import { CreateMarketForm } from "./create-market-form";
 
-export function AdminView() {
-  const { user, loading: authLoading } = useAuth();
+function AdminDesk() {
   const [status, setStatus] = React.useState<MarketStatus>("DRAFT");
 
   const markets = useAsync(`admin:${status}`, () =>
@@ -35,6 +34,26 @@ export function AdminView() {
     },
     [markets, status],
   );
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-12 px-6 py-10">
+      <CreateMarketForm onCreated={handleCreated} />
+      <AdminMarketList
+        status={status}
+        onStatusChange={setStatus}
+        markets={markets.data?.markets ?? []}
+        loading={markets.loading}
+        error={markets.error}
+        onReload={async () => {
+          await markets.reload();
+        }}
+      />
+    </div>
+  );
+}
+
+export function AdminView() {
+  const { user, loading: authLoading } = useAuth();
 
   return (
     <main className="h-full overflow-y-auto">
@@ -64,20 +83,19 @@ export function AdminView() {
             </Link>
           </EmptyState>
         </div>
-      ) : (
-        <div className="mx-auto max-w-7xl space-y-12 px-6 py-10">
-          <CreateMarketForm onCreated={handleCreated} />
-          <AdminMarketList
-            status={status}
-            onStatusChange={setStatus}
-            markets={markets.data?.markets ?? []}
-            loading={markets.loading}
-            error={markets.error}
-            onReload={async () => {
-              await markets.reload();
-            }}
-          />
+      ) : user.role !== "ADMIN" ? (
+        <div className="mx-auto max-w-7xl px-6 py-12">
+          <EmptyState
+            title="Not your desk."
+            description="This page is reserved for admins. Your portfolio is the place for your own book."
+          >
+            <Link href="/markets" className={secondaryAction}>
+              Back to markets
+            </Link>
+          </EmptyState>
         </div>
+      ) : (
+        <AdminDesk />
       )}
 
       <SiteFooter />
