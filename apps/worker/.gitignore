@@ -1,0 +1,24 @@
+# prod
+dist/
+/build
+/out/
+
+# deps
+node_modules/
+
+# env
+.env*
+!.env.schema
+
+# logs
+logs/
+*.log
+
+# misc
+.DS_Store
+
+# typescript
+*.tsbuildinfo
+
+# generated
+/src/env.ts

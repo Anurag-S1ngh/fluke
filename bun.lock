@@ -71,6 +71,22 @@
         "typescript": "catalog:",
       },
     },
+    "apps/worker": {
+      "name": "worker",
+      "dependencies": {
+        "@fluke/db": "workspace:*",
+        "@fluke/email": "workspace:*",
+        "@fluke/queue": "workspace:*",
+        "@fluke/redis": "workspace:*",
+        "varlock": "catalog:",
+      },
+      "devDependencies": {
+        "@fluke/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "tsdown": "^0.23.0",
+        "typescript": "catalog:",
+      },
+    },
     "packages/config": {
       "name": "@fluke/config",
       "version": "0.0.0",
@@ -1316,6 +1332,8 @@
     "web": ["web@workspace:apps/web"],
 
     "which": ["which@4.0.0", "", { "dependencies": { "isexe": "^3.1.1" }, "bin": { "node-which": "bin/which.js" } }, "sha512-GlaYyEb07DPxYCKhKzplCWBJtvxZcZMrL+4UkrTSJHHPyZU4mYYTv3qaOe77H7EODLSSopAUFAc6W8U4yqvscg=="],
+
+    "worker": ["worker@workspace:apps/worker"],
 
     "wrappy": ["wrappy@1.0.2", "", {}, "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="],
 

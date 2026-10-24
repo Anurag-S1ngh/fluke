@@ -1,0 +1,25 @@
+{
+  "name": "worker",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc --noEmit",
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run dist/index.mjs",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@fluke/db": "workspace:*",
+    "@fluke/email": "workspace:*",
+    "@fluke/queue": "workspace:*",
+    "@fluke/redis": "workspace:*",
+    "varlock": "catalog:"
+  },
+  "devDependencies": {
+    "@fluke/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "tsdown": "^0.23.0",
+    "typescript": "catalog:"
+  }
+}
