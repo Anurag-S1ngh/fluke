@@ -140,3 +140,5 @@ export const ledgerTable = pgTable(
   },
   (t) => [index("ledger_user_time_idx").on(t.userId, t.createdAt.desc())],
 );
+
+export * from "./enums";
