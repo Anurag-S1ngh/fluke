@@ -14,6 +14,8 @@
     "@swc/helpers": "^0.5.23",
     "@varlock/nextjs-integration": "1.2.2",
     "babel-plugin-react-compiler": "^1.0.0",
+    "jotai": "^3.0.1",
+    "jotai-family": "^1.1.0",
     "lucide-react": "catalog:",
     "next": "16.4.2",
     "next-themes": "catalog:",
