@@ -1,13 +1,9 @@
-name: CI
+name: Tests and type checks
 
 on:
   push:
     branches: [main]
   pull_request:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   test:
@@ -51,15 +47,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
-
       - run: bun install --frozen-lockfile
-
       - run: bun run db:test:push
-
       - run: bun run test
-
       - run: bun run check-types
