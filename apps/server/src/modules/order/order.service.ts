@@ -163,6 +163,19 @@ export const placeOrder = async (userId: string, input: PlaceOrderInput) => {
     throw new AppError("market is closed for trading", 400);
   }
   return db.transaction(async (tx) => {
+    const [marketState] = await tx
+      .select({
+        status: marketsTable.status,
+        expired: sql<boolean>`${marketsTable.closesAt} <= now()`,
+      })
+      .from(marketsTable)
+      .where(eq(marketsTable.id, input.marketId))
+      .for("share");
+
+    if (!marketState || marketState.status !== "OPEN" || marketState.expired) {
+      throw new AppError("market is not open for trading", 400);
+    }
+
     if (input.side === "BID") {
       const cost = input.price * input.quantity;
       const [user] = await tx
