@@ -10,7 +10,7 @@ import {
   usersTable,
 } from "@fluke/db/schema/index";
 import { assertTestDatabase, resetDatabase } from "@/test/db";
-import { resolveMarket } from "./market.service";
+import { getMarketForViewer, getMarketHistory, listMarkets, resolveMarket } from "./market.service";
 
 beforeAll(assertTestDatabase);
 beforeEach(resetDatabase);
@@ -21,7 +21,7 @@ const next = () => {
   return seq;
 };
 
-const createUser = async (balance = 0, reservedBalance = 0) => {
+const createUser = async (balance = 0, reservedBalance = 0, role: "USER" | "ADMIN" = "USER") => {
   const n = next();
   const [user] = await db
     .insert(usersTable)
@@ -30,6 +30,7 @@ const createUser = async (balance = 0, reservedBalance = 0) => {
       email: `user_${n}@test.fluke`,
       balance,
       reservedBalance,
+      role,
     })
     .returning();
   if (!user) throw new Error("fixture failed: user");
@@ -342,5 +343,72 @@ describe("resolveMarket settlement", () => {
     expect(closedRow?.settledAt).not.toBeNull();
     expect(openRow?.settledAt).toBeNull();
     expect(openRow?.quantity).toBe(20);
+  });
+});
+
+describe("draft visibility", () => {
+  test("open markets are visible to anonymous viewers", async () => {
+    const market = await createMarket();
+
+    await expect(getMarketForViewer(market.id)).resolves.toMatchObject({ id: market.id });
+  });
+
+  test("anonymous viewers cannot list drafts", async () => {
+    await createMarket("DRAFT");
+
+    await expect(listMarkets("DRAFT")).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  test("admins can list drafts", async () => {
+    const admin = await createUser(0, 0, "ADMIN");
+    const market = await createMarket("DRAFT");
+
+    const markets = await listMarkets("DRAFT", admin.id);
+
+    expect(markets.map((entry) => entry.id)).toContain(market.id);
+  });
+
+  test("drafts are hidden from anonymous viewers", async () => {
+    const market = await createMarket("DRAFT");
+
+    await expect(getMarketForViewer(market.id)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  test("drafts are hidden from regular users", async () => {
+    const user = await createUser();
+    const market = await createMarket("DRAFT");
+
+    await expect(getMarketForViewer(market.id, user.id)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+  });
+
+  test("admins can read drafts", async () => {
+    const admin = await createUser(0, 0, "ADMIN");
+    const market = await createMarket("DRAFT");
+
+    await expect(getMarketForViewer(market.id, admin.id)).resolves.toMatchObject({
+      id: market.id,
+      status: "DRAFT",
+    });
+  });
+
+  test("an unknown viewer id is treated as anonymous", async () => {
+    const market = await createMarket("DRAFT");
+
+    await expect(
+      getMarketForViewer(market.id, "00000000-0000-0000-0000-000000000000"),
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  test("draft history is hidden unless the viewer is an admin", async () => {
+    const admin = await createUser(0, 0, "ADMIN");
+    const market = await createMarket("DRAFT");
+
+    await expect(getMarketHistory(market.id)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(getMarketHistory(market.id, "ALL", admin.id)).resolves.toMatchObject({
+      points: [],
+      trades: 0,
+    });
   });
 });

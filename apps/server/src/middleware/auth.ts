@@ -14,3 +14,14 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   req.userId = userId;
   return next();
 };
+
+export const optionalAuth = async (req: Request, _res: Response, next: NextFunction) => {
+  const token = (req.cookies?.session as string | undefined) ?? undefined;
+  if (token) {
+    const userId = await verifySessionToken(token);
+    if (userId) {
+      req.userId = userId;
+    }
+  }
+  return next();
+};

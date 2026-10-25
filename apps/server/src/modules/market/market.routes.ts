@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { requireAdmin, requireAdminForDraft } from "@/middleware/admin";
+import { requireAdmin } from "@/middleware/admin";
+import { optionalAuth } from "@/middleware/auth";
 import * as controller from "./market.controller";
 
 export const marketRouter = Router();
 
-marketRouter.get("/", requireAdminForDraft, controller.list);
-marketRouter.get("/:marketId", controller.detail);
-marketRouter.get("/:marketId/history", controller.history);
+marketRouter.get("/", optionalAuth, controller.list);
+marketRouter.get("/:marketId", optionalAuth, controller.detail);
+marketRouter.get("/:marketId/history", optionalAuth, controller.history);
 marketRouter.post("/", requireAdmin, controller.create);
 marketRouter.patch("/:marketId/publish", requireAdmin, controller.publish);
 marketRouter.patch("/:marketId/close", requireAdmin, controller.close);

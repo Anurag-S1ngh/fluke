@@ -9,9 +9,13 @@ import {
   usersTable,
 } from "@fluke/db/schema/index";
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { assertCanViewDraft } from "./market.access";
 import type { HistoryRange, MarketOutcome, MarketStatus, ResolveMarketInput } from "./market.types";
 
-export const listMarkets = async (status: MarketStatus = "OPEN") => {
+export const listMarkets = async (status: MarketStatus = "OPEN", viewerId?: string) => {
+  if (status === "DRAFT") {
+    await assertCanViewDraft(viewerId);
+  }
   return db
     .select()
     .from(marketsTable)
@@ -27,6 +31,14 @@ export const getMarketById = async (marketId: string) => {
     .limit(1);
   if (!market) {
     throw new AppError("market not found", 404);
+  }
+  return market;
+};
+
+export const getMarketForViewer = async (marketId: string, viewerId?: string) => {
+  const market = await getMarketById(marketId);
+  if (market.status === "DRAFT") {
+    await assertCanViewDraft(viewerId);
   }
   return market;
 };
@@ -63,8 +75,12 @@ const downsample = <T>(points: T[], max: number): T[] => {
  * Price history for the chart. Every trade is converted to the implied YES
  * price (a NO fill at p means YES traded at 100 - p).
  */
-export const getMarketHistory = async (marketId: string, range: HistoryRange = "ALL") => {
-  await getMarketById(marketId);
+export const getMarketHistory = async (
+  marketId: string,
+  range: HistoryRange = "ALL",
+  viewerId?: string,
+) => {
+  await getMarketForViewer(marketId, viewerId);
 
   const span = HISTORY_RANGE_MS[range];
   const since = span === null ? null : new Date(Date.now() - span);

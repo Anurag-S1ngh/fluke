@@ -12,7 +12,7 @@ import {
 export const list = async (req: Request, res: Response) => {
   try {
     const { status } = ListMarketsQuery.parse(req.query);
-    const markets = await service.listMarkets(status);
+    const markets = await service.listMarkets(status, req.userId);
     return res.status(200).json({ markets });
   } catch (err) {
     return sendError(res, err);
@@ -22,7 +22,7 @@ export const list = async (req: Request, res: Response) => {
 export const detail = async (req: Request, res: Response) => {
   try {
     const { marketId } = MarketIdParam.parse(req.params);
-    const market = await service.getMarketById(marketId);
+    const market = await service.getMarketForViewer(marketId, req.userId);
     return res.status(200).json({ market });
   } catch (err) {
     return sendError(res, err);
@@ -33,7 +33,7 @@ export const history = async (req: Request, res: Response) => {
   try {
     const { marketId } = MarketIdParam.parse(req.params);
     const { range } = HistoryQuery.parse(req.query);
-    const data = await service.getMarketHistory(marketId, range);
+    const data = await service.getMarketHistory(marketId, range, req.userId);
     return res.status(200).json(data);
   } catch (err) {
     return sendError(res, err);
