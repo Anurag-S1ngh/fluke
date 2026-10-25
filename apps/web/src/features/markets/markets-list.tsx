@@ -9,15 +9,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { StatusTag } from "@/components/ui/status-tag";
-import { api } from "@/lib/api";
+import { useMarkets } from "@/lib/atoms/resources";
 import { formatDate } from "@/lib/format";
-import type { MarketSummary } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
 
 export function MarketsList() {
-  const { data, error, loading, reload } = useAsync("markets:open", () =>
-    api<{ markets: MarketSummary[] }>("/markets?status=OPEN"),
-  );
+  const { data, error, loading, reload } = useMarkets("OPEN");
   const markets = data?.markets ?? [];
 
   return (

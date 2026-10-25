@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import * as React from "react";
 
 import { formatMoney } from "@/lib/format";
-import { useAuth } from "./auth-provider";
+import { useAuth } from "@/lib/atoms/auth";
 
 const baseLinks = [
   { href: "/markets", label: "Markets" },

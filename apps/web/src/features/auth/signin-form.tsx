@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/layout/auth-provider";
+import { useAuth } from "@/lib/atoms/auth";
 import { AuthError, AuthShell } from "./auth-shell";
 import { inputClass, primaryAction, textAction } from "@/components/ui/actions";
 import { Field } from "@/components/ui/field";

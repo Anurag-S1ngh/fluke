@@ -3,15 +3,14 @@
 import Link from "next/link";
 import * as React from "react";
 
-import { useAuth } from "@/components/layout/auth-provider";
+import { useAuth } from "@/lib/atoms/auth";
+import { useMarkets } from "@/lib/atoms/resources";
 import { SiteFooter } from "@/components/layout/footer";
 import { primaryAction, secondaryAction } from "@/components/ui/actions";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonRows } from "@/components/ui/skeleton-rows";
-import { api } from "@/lib/api";
-import type { MarketStatus, MarketSummary } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
+import type { MarketStatus } from "@/lib/types";
 
 import { AdminMarketList } from "./admin-market-list";
 import { CreateMarketForm } from "./create-market-form";
@@ -19,9 +18,7 @@ import { CreateMarketForm } from "./create-market-form";
 function AdminDesk() {
   const [status, setStatus] = React.useState<MarketStatus>("DRAFT");
 
-  const markets = useAsync(`admin:${status}`, () =>
-    api<{ markets: MarketSummary[] }>(`/markets?status=${status}`),
-  );
+  const markets = useMarkets(status);
 
   const handleCreated = React.useCallback(
     async (published: boolean) => {

@@ -5,7 +5,8 @@ import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/layout/auth-provider";
+import { useAuth } from "@/lib/atoms/auth";
+import { useOrders, usePositions } from "@/lib/atoms/resources";
 import { SiteFooter } from "@/components/layout/footer";
 import { OrdersTable } from "@/components/market/orders-table";
 import { primaryAction, secondaryAction, textAction } from "@/components/ui/actions";
@@ -13,8 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { api } from "@/lib/api";
-import type { Order, Position } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
+import type { Order } from "@/lib/types";
 
 import { PortfolioSummary } from "./portfolio-summary";
 import { PositionsTable, type PositionTab } from "./positions-table";
@@ -24,13 +24,8 @@ export function PortfolioView() {
   const [tab, setTab] = React.useState<PositionTab>("live");
   const [cancellingId, setCancellingId] = React.useState<string | null>(null);
 
-  const positions = useAsync(`positions:${user?.id ?? "guest"}`, () =>
-    user ? api<{ positions: Position[] }>("/positions") : Promise.resolve({ positions: [] }),
-  );
-
-  const orders = useAsync(`orders:${user?.id ?? "guest"}`, () =>
-    user ? api<{ orders: Order[] }>("/orders") : Promise.resolve({ orders: [] }),
-  );
+  const positions = usePositions(user?.id ?? null);
+  const orders = useOrders({ userId: user?.id ?? null });
 
   const allPositions = positions.data?.positions ?? [];
   const live = allPositions.filter((position) => !position.settledAt && position.quantity > 0);

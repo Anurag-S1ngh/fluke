@@ -4,7 +4,8 @@ import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/layout/auth-provider";
+import { useAuth } from "@/lib/atoms/auth";
+import { useBook, useHistory, useMarket, useOrders, usePositions } from "@/lib/atoms/resources";
 import { SiteFooter } from "@/components/layout/footer";
 import { OrderBook } from "@/components/market/order-book";
 import { OrderTicket, type BestPrices } from "@/components/market/order-ticket";
@@ -15,16 +16,7 @@ import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { StatusTag } from "@/components/ui/status-tag";
 import { api } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
-import type {
-  BookLevel,
-  HistoryRange,
-  Market,
-  MarketHistory,
-  Order,
-  Outcome,
-  Position,
-} from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
+import type { BookLevel, HistoryRange, Order, Outcome } from "@/lib/types";
 
 import { PriceChart } from "./price-chart";
 
@@ -47,27 +39,11 @@ export function MarketView({ marketId }: { marketId: string }) {
   const [cancellingId, setCancellingId] = React.useState<string | null>(null);
   const [range, setRange] = React.useState<HistoryRange>("ALL");
 
-  const market = useAsync(`market:${marketId}`, () =>
-    api<{ market: Market }>(`/markets/${marketId}`),
-  );
-
-  const book = useAsync(`book:${marketId}`, () =>
-    api<{ book: BookLevel[] }>(`/orders/book?marketId=${marketId}`),
-  );
-
-  const history = useAsync<MarketHistory>(`history:${marketId}:${range}`, () =>
-    api<MarketHistory>(`/markets/${marketId}/history?range=${range}`),
-  );
-
-  const orders = useAsync(`orders:${user?.id ?? "guest"}:${marketId}`, () =>
-    user
-      ? api<{ orders: Order[] }>(`/orders?marketId=${marketId}`)
-      : Promise.resolve({ orders: [] }),
-  );
-
-  const positions = useAsync(`positions:${user?.id ?? "guest"}`, () =>
-    user ? api<{ positions: Position[] }>("/positions") : Promise.resolve({ positions: [] }),
-  );
+  const market = useMarket(marketId);
+  const book = useBook(marketId);
+  const history = useHistory({ marketId, range });
+  const orders = useOrders({ userId: user?.id ?? null, marketId });
+  const positions = usePositions(user?.id ?? null);
 
   const levels = React.useMemo(() => book.data?.book ?? [], [book.data]);
   const best = React.useMemo(() => computeBest(levels), [levels]);
