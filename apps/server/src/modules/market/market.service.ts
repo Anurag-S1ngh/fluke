@@ -1,5 +1,6 @@
 import { db } from "@/services";
 import { AppError } from "@/types/error";
+import { expireMarket, expireMarkets } from "@fluke/db/markets";
 import {
   ledgerTable,
   marketsTable,
@@ -15,6 +16,8 @@ import type { HistoryRange, MarketOutcome, MarketStatus, ResolveMarketInput } fr
 export const listMarkets = async (status: MarketStatus = "OPEN", viewerId?: string) => {
   if (status === "DRAFT") {
     await assertCanViewDraft(viewerId);
+  } else {
+    await expireMarkets(db);
   }
   return db
     .select()
@@ -36,7 +39,13 @@ export const getMarketById = async (marketId: string) => {
 };
 
 export const getMarketForViewer = async (marketId: string, viewerId?: string) => {
-  const market = await getMarketById(marketId);
+  let market = await getMarketById(marketId);
+  if (market.status === "OPEN" && market.closesAt <= new Date()) {
+    const closed = await expireMarket(db, marketId);
+    if (closed) {
+      market = closed;
+    }
+  }
   if (market.status === "DRAFT") {
     await assertCanViewDraft(viewerId);
   }
@@ -145,6 +154,9 @@ export const publishMarket = async (marketId: string) => {
   if (market.status !== "DRAFT") {
     throw new AppError("only draft markets can be published", 400);
   }
+  if (market.closesAt.getTime() <= Date.now()) {
+    throw new AppError("closesAt must be in the future", 400);
+  }
   const [updated] = await db
     .update(marketsTable)
     .set({ status: "OPEN", updatedAt: new Date() })
@@ -193,6 +205,28 @@ export const resolveMarket = async (
   const PAYOUT_PER_SHARE = 100; // one winning share pays $1.00 ( last two digits are decimals)
 
   return db.transaction(async (tx) => {
+    const [locked] = await tx
+      .select({
+        status: marketsTable.status,
+        expired: sql<boolean>`${marketsTable.closesAt} <= now()`,
+      })
+      .from(marketsTable)
+      .where(eq(marketsTable.id, marketId))
+      .for("update");
+
+    if (!locked) {
+      throw new AppError("market not found", 404);
+    }
+    if (!resolvableStatuses.includes(locked.status)) {
+      throw new AppError("market cannot be resolved in current state", 400);
+    }
+    if (locked.status === "OPEN" && locked.expired) {
+      await tx
+        .update(marketsTable)
+        .set({ status: "CLOSED", updatedAt: now })
+        .where(eq(marketsTable.id, marketId));
+    }
+
     const releaseCash = async (userId: string, amount: number) => {
       const [user] = await tx
         .select({ reservedBalance: usersTable.reservedBalance })
