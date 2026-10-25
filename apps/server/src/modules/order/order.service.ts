@@ -53,29 +53,18 @@ const applyFill = async (
   const lockAmount = bid.price * qty;
   const surplus = (bid.price - execPrice) * qty;
   const [buyer] = await tx
-    .select({ reservedBalance: usersTable.reservedBalance })
-    .from(usersTable)
-    .where(eq(usersTable.id, bid.userId))
-    .for("update");
-  if (!buyer || buyer.reservedBalance < lockAmount) {
-    throw new AppError("reservation mismatch", 500);
-  }
-  await tx
     .update(usersTable)
     .set({
       balance: sql`${usersTable.balance} + ${surplus}`,
       reservedBalance: sql`${usersTable.reservedBalance} - ${lockAmount}`,
       updatedAt: new Date(),
     })
-    .where(eq(usersTable.id, bid.userId));
-  if (surplus > 0) {
-    await tx.insert(ledgerTable).values({
-      type: "BID",
-      userId: bid.userId,
-      amount: surplus,
-      entryDirection: "CREDIT",
-    });
+    .where(and(eq(usersTable.id, bid.userId), gte(usersTable.reservedBalance, lockAmount)))
+    .returning({ id: usersTable.id });
+  if (!buyer) {
+    throw new AppError("reservation mismatch", 500);
   }
+
   await tx
     .insert(positionsTable)
     .values({
@@ -94,27 +83,26 @@ const applyFill = async (
     });
 
   const [sellerPosition] = await tx
-    .select()
-    .from(positionsTable)
-    .where(
-      and(
-        eq(positionsTable.userId, ask.userId),
-        eq(positionsTable.marketId, ask.marketId),
-        eq(positionsTable.outcome, ask.outcome),
-      ),
-    )
-    .for("update");
-  if (!sellerPosition || sellerPosition.reservedQuantity < qty || sellerPosition.quantity < qty) {
-    throw new AppError("reservation mismatch", 500);
-  }
-  const saleAmount = execPrice * qty;
-  await tx
     .update(positionsTable)
     .set({
       quantity: sql`${positionsTable.quantity} - ${qty}`,
       reservedQuantity: sql`${positionsTable.reservedQuantity} - ${qty}`,
     })
-    .where(eq(positionsTable.id, sellerPosition.id));
+    .where(
+      and(
+        eq(positionsTable.userId, ask.userId),
+        eq(positionsTable.marketId, ask.marketId),
+        eq(positionsTable.outcome, ask.outcome),
+        gte(positionsTable.quantity, qty),
+        gte(positionsTable.reservedQuantity, qty),
+      ),
+    )
+    .returning({ id: positionsTable.id });
+  if (!sellerPosition) {
+    throw new AppError("reservation mismatch", 500);
+  }
+
+  const saleAmount = execPrice * qty;
   await tx
     .update(usersTable)
     .set({
@@ -122,35 +110,35 @@ const applyFill = async (
       updatedAt: new Date(),
     })
     .where(eq(usersTable.id, ask.userId));
-  await tx.insert(ledgerTable).values({
+
+  const entries: (typeof ledgerTable.$inferInsert)[] = [];
+  if (surplus > 0) {
+    entries.push({
+      type: "BID",
+      userId: bid.userId,
+      amount: surplus,
+      entryDirection: "CREDIT",
+    });
+  }
+  entries.push({
     type: "ASK",
     userId: ask.userId,
     amount: saleAmount,
     entryDirection: "CREDIT",
   });
+  await tx.insert(ledgerTable).values(entries);
 
-  for (const matchOrder of [bid, ask]) {
-    const [updated] = await tx
-      .update(ordersTable)
-      .set({
-        filledQuantity: sql`${ordersTable.filledQuantity} + ${qty}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(ordersTable.id, matchOrder.id))
-      .returning({
-        filledQuantity: ordersTable.filledQuantity,
-        quantity: ordersTable.quantity,
-      });
-    if (!updated) {
-      throw new AppError("order not found", 404);
-    }
-    await tx
-      .update(ordersTable)
-      .set({
-        status: updated.filledQuantity >= updated.quantity ? "FILLED" : "PARTIALLY_FILLED",
-        updatedAt: new Date(),
-      })
-      .where(eq(ordersTable.id, matchOrder.id));
+  const updated = await tx
+    .update(ordersTable)
+    .set({
+      filledQuantity: sql`${ordersTable.filledQuantity} + ${qty}`,
+      status: sql`(CASE WHEN ${ordersTable.filledQuantity} + ${qty} >= ${ordersTable.quantity} THEN 'FILLED' ELSE 'PARTIALLY_FILLED' END)::order_status`,
+      updatedAt: new Date(),
+    })
+    .where(inArray(ordersTable.id, [bid.id, ask.id]))
+    .returning({ id: ordersTable.id });
+  if (updated.length !== 2) {
+    throw new AppError("order not found", 404);
   }
 };
 
