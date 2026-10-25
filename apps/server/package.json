@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc --noEmit",
-    "test": "bun test",
+    "test": "NODE_ENV=test bun test",
+    "test:watch": "NODE_ENV=test bun test --watch",
     "db:seed": "bun ../../packages/db/src/seed.ts",
     "compile": "bun build --compile --no-compile-autoload-dotenv --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "bun run --hot src/index.ts",

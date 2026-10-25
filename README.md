@@ -164,13 +164,18 @@ Run these from the repository root.
 | `bun run db:generate`  | Generate a migration from schema changes             |
 | `bun run db:push`      | Push the schema without a migration                  |
 | `bun run db:studio`    | Open Drizzle Studio                                  |
+| `bun run db:test:push` | Push the schema to the test database                 |
+| `bun run test`         | Run the server test suite against the test database  |
+| `bun run compose:up`   | Start Postgres and Redis with Docker                 |
+| `bun run compose:down` | Stop the Docker services                             |
 | `bun run env:generate` | Regenerate typed `env.ts` files after schema changes |
 
 Server-only commands, run from `apps/server`:
 
 | Script                       | Purpose                        |
 | ---------------------------- | ------------------------------ |
-| `bun test`                   | Run the server test suite      |
+| `bun run test`               | Run the server test suite      |
+| `bun run test:watch`         | Re-run tests on file changes   |
 | `bun run db:seed`            | Seed demo data                 |
 | `bun run db:seed -- --reset` | Rebuild demo data from scratch |
 
@@ -185,20 +190,48 @@ refusing to run tests against non-test database "fluke" —
 set DATABASE_URL to a database ending in _test
 ```
 
-Run them against a disposable database:
+Tests use a separate database and Redis database from development, so a run cannot wipe your dev data.
+
+### Setup
+
+`docker/compose.yaml` starts Postgres (with `fluke_test` created by the init script) and Redis:
 
 ```bash
-# create the test database once
-createdb fluke_test
+bun run compose:up
+```
 
-# point apps/server/.env at it
-# DATABASE_URL=postgres://localhost:5432/fluke_test
+Create `apps/server/.env.test` (gitignored) with the test overrides:
 
-# from the repository root
-bun run db:push
+```dotenv
+DATABASE_URL=postgresql://fluke:fluke@localhost:5432/fluke_test
+REDIS_URL=redis://localhost:6379/1
+```
 
-cd apps/server
-bun test
+Use the same credentials as the `DATABASE_URL` in `apps/server/.env` and change only the database name. The values above match the compose services. Redis database `1` keeps test keys out of the development database.
+
+Varlock loads `.env` first and `.env.test` on top when `NODE_ENV=test`, so secrets such as `JWT_SECRET` still come from `.env`. Process environment variables override both.
+
+Apply the schema to the test database whenever the schema changes:
+
+```bash
+bun run db:test:push
+```
+
+### Run
+
+```bash
+bun run test
+```
+
+The `test` script in `apps/server` sets `NODE_ENV=test`, which makes Varlock load `.env.test`. Turbo runs the task uncached because the tests mutate the database.
+
+If the Postgres volume already exists from an earlier boot, `fluke_test` may be missing. Recreate the volume once:
+
+```bash
+bun run compose:down
+docker compose -f docker/compose.yaml down -v
+bun run compose:up
+bun run db:test:push
 ```
 
 Email delivery is mocked in tests, so no Resend key is exercised there.
