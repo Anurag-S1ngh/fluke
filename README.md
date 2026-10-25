@@ -5,7 +5,7 @@ A play-money prediction market. Every question trades in cents between 1¢ and 9
 ## What it does
 
 - **Email OTP auth** — sign up or sign in with a one-time code. New accounts start with $1,000 in play money; a daily grant is added on the first verification of each UTC day.
-- **Markets** — write a question, publish it, close the book, then resolve YES/NO or refund every position.
+- **Markets** — write a question, publish it, close the book automatically at `closesAt` (or manually), then resolve YES/NO or refund every position.
 - **Trading** — limit orders cross the book automatically with price-time priority. Partial fills, cash/share reservation, and no self-trading.
 - **Portfolio** — cash, open and settled positions, resting orders, and cancellation.
 - **Admin desk** — create, publish, close, resolve, refund, and delete markets.
@@ -244,11 +244,10 @@ Each app owns an `.env.schema` consumed by [Varlock](https://varlock.dev); the g
 
 These are known gaps, not undocumented surprises:
 
-- **No scheduled market close.** Trading is blocked once `closesAt` passes, but the market stays `OPEN` and remains on the public list until an admin closes it. There is no background job.
 - **Daily grant requires re-verification.** The grant runs during OTP verification, so a user staying signed in across days will not receive it until their next sign-in.
 - **No OTP rate limiting.** There is no attempt cap or send throttle on `/auth/signup` and `/auth/signin`.
-- **No pagination.** Market, order, and position lists are unpaginated; price history is capped at 2,000 trades.
-- **No CI or deployment configuration.** There is no Dockerfile, pipeline, or log/metrics integration in the repo.
+- **No pagination.** Market, order, and position lists are unpaginated; price history is capped at the newest 2,000 trades.
+- **No deployment configuration.** There is no Dockerfile or log/metrics integration; CI only runs tests and type checks.
 
 ## Built with
 
