@@ -5,12 +5,14 @@ export const QUEUE_PREFIX = "fluke";
 
 export const QUEUE_NAMES = {
   email: "email",
+  market: "market",
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 
 export const JOB_NAMES = {
   sendOtpEmail: "send-otp-email",
+  closeExpiredMarkets: "close-expired-markets",
 } as const;
 
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
