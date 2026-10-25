@@ -579,4 +579,91 @@ describe("getOrderBook", () => {
 
     expect(await getOrderBook(market.id)).toEqual([]);
   });
+
+  test("caps each side at the requested depth", async () => {
+    const alice = await createUser();
+    const market = await createMarket();
+    await db.insert(ordersTable).values(
+      Array.from({ length: 25 }, (_, index) => ({
+        userId: alice.id,
+        marketId: market.id,
+        side: "BID" as const,
+        outcome: "YES" as const,
+        price: index + 1,
+        quantity: 10,
+      })),
+    );
+    await db.insert(ordersTable).values(
+      Array.from({ length: 25 }, (_, index) => ({
+        userId: alice.id,
+        marketId: market.id,
+        side: "ASK" as const,
+        outcome: "YES" as const,
+        price: index + 51,
+        quantity: 10,
+      })),
+    );
+
+    const book = await getOrderBook(market.id);
+    const bids = book.filter((level) => level.side === "BID").map((level) => level.price);
+    const asks = book.filter((level) => level.side === "ASK").map((level) => level.price);
+
+    expect(bids).toEqual(Array.from({ length: 20 }, (_, index) => 25 - index));
+    expect(asks).toEqual(Array.from({ length: 20 }, (_, index) => 51 + index));
+  });
+
+  test("honors a smaller depth", async () => {
+    const alice = await createUser();
+    const market = await createMarket();
+    await db.insert(ordersTable).values(
+      Array.from({ length: 10 }, (_, index) => ({
+        userId: alice.id,
+        marketId: market.id,
+        side: "BID" as const,
+        outcome: "NO" as const,
+        price: index + 1,
+        quantity: 5,
+      })),
+    );
+
+    const book = await getOrderBook(market.id, 5);
+
+    expect(book.map((level) => level.price)).toEqual([10, 9, 8, 7, 6]);
+  });
+});
+
+describe("order responses", () => {
+  test("placeOrder returns the updated balance", async () => {
+    const trader = await createUser(10_000);
+    const market = await createMarket();
+
+    const { order, balance } = await placeOrder(trader.id, {
+      marketId: market.id,
+      side: "BID",
+      outcome: "YES",
+      price: 60,
+      quantity: 10,
+    });
+
+    expect(order.status).toBe("OPEN");
+    expect(balance).toBe(9400);
+    expect((await balancesOf(trader.id)).balance).toBe(balance);
+  });
+
+  test("cancelOrder returns the released balance", async () => {
+    const trader = await createUser(10_000);
+    const market = await createMarket();
+    const { order } = await placeOrder(trader.id, {
+      marketId: market.id,
+      side: "BID",
+      outcome: "YES",
+      price: 60,
+      quantity: 10,
+    });
+
+    const { balance } = await cancelOrder(trader.id, order.id);
+
+    expect(balance).toBe(10_000);
+    expect(await balancesOf(trader.id)).toMatchObject({ balance: 10_000, reservedBalance: 0 });
+  });
 });
