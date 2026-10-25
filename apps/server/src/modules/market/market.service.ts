@@ -8,7 +8,7 @@ import {
   tradesTable,
   usersTable,
 } from "@fluke/db/schema/index";
-import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { assertCanViewDraft } from "./market.access";
 import type { HistoryRange, MarketOutcome, MarketStatus, ResolveMarketInput } from "./market.types";
 
@@ -53,6 +53,7 @@ const HISTORY_RANGE_MS: Record<HistoryRange, number | null> = {
 };
 
 const MAX_HISTORY_POINTS = 240;
+const HISTORY_TRADE_LIMIT = 2000;
 
 const downsample = <T>(points: T[], max: number): T[] => {
   if (points.length <= max) {
@@ -98,20 +99,22 @@ export const getMarketHistory = async (
         ? and(eq(tradesTable.marketId, marketId), gte(tradesTable.createdAt, since))
         : eq(tradesTable.marketId, marketId),
     )
-    .orderBy(asc(tradesTable.createdAt))
-    .limit(2000);
+    .orderBy(desc(tradesTable.createdAt))
+    .limit(HISTORY_TRADE_LIMIT);
 
-  const allPoints = trades.map((trade) => ({
+  const ordered = [...trades].reverse();
+
+  const allPoints = ordered.map((trade) => ({
     t: trade.createdAt.toISOString(),
     yes: trade.outcome === "YES" ? trade.price : 100 - trade.price,
   }));
 
-  const volume = trades.reduce((total, trade) => total + trade.price * trade.quantity, 0);
+  const volume = ordered.reduce((total, trade) => total + trade.price * trade.quantity, 0);
 
   return {
     points: downsample(allPoints, MAX_HISTORY_POINTS),
     volume,
-    trades: trades.length,
+    trades: ordered.length,
   };
 };
 
