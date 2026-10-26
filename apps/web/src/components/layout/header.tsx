@@ -141,10 +141,10 @@ export default function Header() {
               <Link
                 href={authHref("/signin")}
                 className={cn(
-                  "-my-2 inline-flex items-center py-2 underline-offset-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4",
+                  "inline-flex items-center border px-2 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4",
                   overlay
-                    ? "hover:text-white hover:underline focus-visible:outline-white"
-                    : "underline hover:text-signal focus-visible:outline-foreground",
+                    ? "border-white hover:bg-white hover:text-[#2036ff] focus-visible:outline-white"
+                    : "border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
                 )}
               >
                 Sign in
