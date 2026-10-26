@@ -1,17 +1,24 @@
+import type * as React from "react";
+
 import { SectionMark } from "@/components/ui/section-mark";
 
-const features = [
+import { NoticeArt, NumberArt, StakeArt } from "./why-art";
+
+const features: { title: string; body: string; art: React.ReactNode }[] = [
   {
     title: "Skin in the game",
     body: "Polls record what people say. Prices record what they will back with money — a harder signal to fake.",
+    art: <StakeArt />,
   },
   {
     title: "One number",
     body: "No pundit panel, no thread to decode. The price is the forecast, updated on every trade.",
+    art: <NumberArt />,
   },
   {
     title: "Settled in public",
     body: "Each question states its source and date up front. If it cannot resolve as written, everyone is refunded.",
+    art: <NoticeArt />,
   },
 ];
 
@@ -26,14 +33,21 @@ export function WhyPrices() {
           </h2>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-5xl gap-px border-2 border-foreground bg-border sm:grid-cols-3">
-          {features.map(({ title, body }) => (
-            <div key={title} className="bg-background px-8 py-12 sm:py-16">
-              <h3 className="font-serif text-2xl">{title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
-            </div>
+        <ul className="mx-auto mt-16 max-w-6xl divide-y divide-foreground/15 border border-foreground/15">
+          {features.map(({ title, body, art }) => (
+            <li key={title} className="grid items-stretch sm:grid-cols-2">
+              <div className="flex items-center justify-center border-b border-foreground/15 bg-secondary/40 px-6 py-8 sm:border-r sm:border-b-0">
+                <div className="w-full max-w-[15rem]">{art}</div>
+              </div>
+              <div className="flex flex-col justify-center px-8 py-10 sm:px-12">
+                <h3 className="font-serif text-2xl">{title}</h3>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+                  {body}
+                </p>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );
