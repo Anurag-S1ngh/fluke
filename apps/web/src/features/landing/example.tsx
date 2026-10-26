@@ -19,7 +19,7 @@ export function Example() {
           </p>
         </div>
 
-        <div className="mx-auto mt-16 max-w-3xl border-2 border-foreground">
+        <div className="mx-auto mt-16 max-w-3xl border-2 border-foreground/20">
           <div className="border-b border-border px-6 py-4">
             <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
               Open · Closes on stated date
