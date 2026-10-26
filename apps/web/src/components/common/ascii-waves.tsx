@@ -1,9 +1,18 @@
+"use client";
+
+import * as React from "react";
+
 import { cn } from "@fluke/ui/lib/utils";
 
 /**
  * A still from a rendered, pale-blue wave field, converted to a dense ASCII
  * luminance map. The grids are precomputed so the hero needs no image request
  * at runtime and stays crisp at any viewport size.
+ *
+ * Each grid is re-sampled through a slow domain warp driven by one loop phase,
+ * so the sea swells and settles instead of stepping through keyframes. The warp
+ * starts and ends at zero displacement, which keeps the seam invisible and lets
+ * the server-rendered still double as the reduced-motion frame.
  */
 const DESKTOP = `++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#*::====---------------:.  #*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*#-.-===-----------------::.  #*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -162,13 +171,259 @@ const MOBILE = `::::::::::-------------============================+++++++++++++
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++`;
 
+/** Glyph ramp for the luminance map, sparse to dense. */
+const RAMP = " .:-=+*#%@";
+const LOOP_MS = 5_000;
+const FRAME_MS = 1000 / 30;
+
+type Harmonic = {
+  sin: Float32Array;
+  cos: Float32Array;
+  /** Whole turns of the loop phase this harmonic travels per cycle. */
+  turns: number;
+  weight: number;
+};
+
+type Wave = {
+  width: number;
+  height: number;
+  /** Luminance levels, `0..RAMP.length - 1`, row-major. */
+  levels: Float32Array;
+  ampX: number;
+  ampY: number;
+  /** Sampled per row; shifts columns. */
+  rows: Harmonic[];
+  /** Sampled per column; shifts rows. */
+  cols: Harmonic[];
+};
+
+type WaveOptions = {
+  ampX: number;
+  ampY: number;
+  rows: Array<[freq: number, turns: number, weight: number]>;
+  cols: Array<[freq: number, turns: number, weight: number]>;
+};
+
+function buildHarmonic(
+  length: number,
+  [freq, turns, weight]: WaveOptions["rows"][number],
+): Harmonic {
+  const sin = new Float32Array(length);
+  const cos = new Float32Array(length);
+
+  for (let index = 0; index < length; index++) {
+    sin[index] = Math.sin(index * freq);
+    cos[index] = Math.cos(index * freq);
+  }
+
+  return { sin, cos, turns, weight };
+}
+
+function buildWave(art: string, options: WaveOptions): Wave {
+  const lines = art.split("\n");
+  const height = lines.length;
+  const width = Math.max(...lines.map((line) => line.length));
+  const levels = new Float32Array(width * height);
+
+  for (let y = 0; y < height; y++) {
+    const line = lines[y];
+    for (let x = 0; x < width; x++) {
+      levels[y * width + x] = Math.max(0, RAMP.indexOf(line[x] ?? " "));
+    }
+  }
+
+  return {
+    width,
+    height,
+    levels,
+    ampX: options.ampX,
+    ampY: options.ampY,
+    rows: options.rows.map((harmonic) => buildHarmonic(height, harmonic)),
+    cols: options.cols.map((harmonic) => buildHarmonic(width, harmonic)),
+  };
+}
+
+const DESKTOP_WAVE = buildWave(DESKTOP, {
+  ampX: 2.6,
+  ampY: 1.8,
+  rows: [
+    [0.09, 1, 1],
+    [0.037, -2, 0.5],
+  ],
+  cols: [
+    [0.055, -1, 1],
+    [0.021, 2, 0.5],
+  ],
+});
+
+const MOBILE_WAVE = buildWave(MOBILE, {
+  ampX: 1.6,
+  ampY: 1.2,
+  rows: [
+    [0.11, 1, 1],
+    [0.045, -2, 0.5],
+  ],
+  cols: [
+    [0.07, -1, 1],
+    [0.028, 2, 0.5],
+  ],
+});
+
+/** Bilinear read of the luminance map, clamped to the edges. */
+function sampleLevel(wave: Wave, x: number, y: number): number {
+  const { width, height, levels } = wave;
+  const cx = Math.min(width - 1, Math.max(0, x));
+  const cy = Math.min(height - 1, Math.max(0, y));
+  const x0 = Math.floor(cx);
+  const y0 = Math.floor(cy);
+  const x1 = Math.min(width - 1, x0 + 1);
+  const y1 = Math.min(height - 1, y0 + 1);
+  const fx = cx - x0;
+  const fy = cy - y0;
+
+  const top = levels[y0 * width + x0] * (1 - fx) + levels[y0 * width + x1] * fx;
+  const bottom = levels[y1 * width + x0] * (1 - fx) + levels[y1 * width + x1] * fx;
+
+  return top * (1 - fy) + bottom * fy;
+}
+
+function paintWave(wave: Wave, phase: number): string {
+  const cos1 = Math.cos(phase);
+  const sin1 = Math.sin(phase);
+  const cos2 = cos1 * cos1 - sin1 * sin1;
+  const sin2 = 2 * sin1 * cos1;
+  // Fades the warp in and out, so the loop opens and closes on the still.
+  const swell = 0.5 - 0.5 * cos1;
+  const { width, height } = wave;
+
+  const shiftX = new Float32Array(height);
+  for (let y = 0; y < height; y++) {
+    let offset = 0;
+    for (const axis of wave.rows) {
+      const cos = Math.abs(axis.turns) === 1 ? cos1 : cos2;
+      const sin = (Math.abs(axis.turns) === 1 ? sin1 : sin2) * Math.sign(axis.turns);
+      offset += axis.weight * (axis.sin[y] * cos + axis.cos[y] * sin);
+    }
+    shiftX[y] = offset * wave.ampX * swell;
+  }
+
+  const shiftY = new Float32Array(width);
+  for (let x = 0; x < width; x++) {
+    let offset = 0;
+    for (const axis of wave.cols) {
+      const cos = Math.abs(axis.turns) === 1 ? cos1 : cos2;
+      const sin = (Math.abs(axis.turns) === 1 ? sin1 : sin2) * Math.sign(axis.turns);
+      offset += axis.weight * (axis.sin[x] * cos + axis.cos[x] * sin);
+    }
+    shiftY[x] = offset * wave.ampY * swell;
+  }
+
+  const lines: string[] = [];
+
+  for (let y = 0; y < height; y++) {
+    let line = "";
+    for (let x = 0; x < width; x++) {
+      const level = Math.round(sampleLevel(wave, x + shiftX[y], y + shiftY[x]));
+      line += RAMP[level] ?? " ";
+    }
+    lines.push(line);
+  }
+
+  return lines.join("\n");
+}
+
 export function AsciiWaves({ className }: { className?: string }) {
+  const root = React.useRef<HTMLDivElement | null>(null);
+  const wide = React.useRef<HTMLPreElement | null>(null);
+  const narrow = React.useRef<HTMLPreElement | null>(null);
+
+  React.useEffect(() => {
+    const node = root.current;
+    const desktop = wide.current;
+    const mobile = narrow.current;
+    if (!node || !desktop || !mobile) return;
+
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reduced = motion.matches;
+    let visible = false;
+    let frame = 0;
+    let started = 0;
+    let paintedAt = 0;
+    let phase = 0;
+
+    const paint = (next: number) => {
+      phase = next;
+      desktop.textContent = paintWave(DESKTOP_WAVE, next * Math.PI * 2);
+      mobile.textContent = paintWave(MOBILE_WAVE, next * Math.PI * 2);
+    };
+
+    const tick = (now: number) => {
+      if (!started) started = now;
+      if (now - paintedAt >= FRAME_MS) {
+        paintedAt = now;
+        paint(((now - started) / LOOP_MS) % 1);
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    const canRun = () => visible && !reduced && document.visibilityState !== "hidden";
+
+    const start = () => {
+      if (frame || !canRun()) return;
+      started = performance.now() - phase * LOOP_MS;
+      paintedAt = 0;
+      frame = requestAnimationFrame(tick);
+    };
+
+    const stop = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        visible = Boolean(entries.at(-1)?.isIntersecting);
+        if (visible) start();
+        else stop();
+      },
+      { rootMargin: "120px 0px", threshold: 0.05 },
+    );
+    observer.observe(node);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") stop();
+      else start();
+    };
+
+    const onMotion = () => {
+      reduced = motion.matches;
+      if (reduced) {
+        stop();
+        paint(0);
+      } else {
+        start();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    motion.addEventListener("change", onMotion);
+
+    return () => {
+      stop();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+      motion.removeEventListener("change", onMotion);
+    };
+  }, []);
+
   return (
     <div
+      ref={root}
       aria-hidden="true"
       className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}
     >
       <pre
+        ref={wide}
         className="absolute top-0 left-1/2 hidden -translate-x-1/2 font-mono leading-none whitespace-pre text-white opacity-85 md:block"
         style={{ fontSize: "max(calc(100vw / 140), calc(100svh / 68))" }}
       >
@@ -176,6 +431,7 @@ export function AsciiWaves({ className }: { className?: string }) {
       </pre>
       {/* Bottom-anchored and slightly zoomed so the crest stays visible on phones. */}
       <pre
+        ref={narrow}
         className="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono leading-none whitespace-pre text-white opacity-85 md:hidden"
         style={{ fontSize: "max(calc(100vw / 48), calc(100svh / 58))" }}
       >
