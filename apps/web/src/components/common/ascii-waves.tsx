@@ -169,14 +169,14 @@ export function AsciiWaves({ className }: { className?: string }) {
       className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}
     >
       <pre
-        className="absolute top-0 left-1/2 hidden -translate-x-1/2 font-mono leading-none whitespace-pre text-white md:block"
+        className="absolute top-0 left-1/2 hidden -translate-x-1/2 font-mono leading-none whitespace-pre text-white opacity-85 md:block"
         style={{ fontSize: "max(calc(100vw / 140), calc(100svh / 68))" }}
       >
         {DESKTOP}
       </pre>
       {/* Bottom-anchored and slightly zoomed so the crest stays visible on phones. */}
       <pre
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono leading-none whitespace-pre text-white md:hidden"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono leading-none whitespace-pre text-white opacity-85 md:hidden"
         style={{ fontSize: "max(calc(100vw / 48), calc(100svh / 58))" }}
       >
         {MOBILE}
