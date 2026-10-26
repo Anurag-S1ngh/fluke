@@ -216,7 +216,7 @@ export interface NoticePose {
   trip: number;
 }
 
-export const NOTICE_STILL = 0.415;
+export const NOTICE_STILL = 0.5;
 
 export function noticePose(phase: number): NoticePose {
   const t = wrap01(phase);

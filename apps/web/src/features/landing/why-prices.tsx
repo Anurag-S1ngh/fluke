@@ -37,7 +37,7 @@ export function WhyPrices() {
           {features.map(({ title, body, art }, index) => (
             <li key={title} className="grid items-stretch sm:grid-cols-2">
               <div className="flex items-center justify-center border-b border-foreground/15 bg-secondary/40 px-8 py-10 sm:border-r sm:border-b-0">
-                <div className="w-full max-w-[18rem]">{art}</div>
+                <div className="w-full max-w-[21rem]">{art}</div>
               </div>
               <div className="flex flex-col justify-center px-8 py-10 sm:px-12">
                 <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
