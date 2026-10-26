@@ -114,13 +114,14 @@ export const BEAM_MID = 4.35;
 export const BEAM_DROP = 0.9;
 export const BEAM_HANGER = 1.55;
 export const PAN_REF_Z = BEAM_MID - BEAM_HANGER;
-export const PAN_PLAN: Flat = [2.3, -2.3];
+export const PAN_LEFT: Flat = [-2.3, 2.3];
+export const PAN_RIGHT: Flat = [2.3, -2.3];
 export const WEIGHT_LIFT = 1.35;
 
 const BEAM_EVENTS = [
-  [0.1, -1],
+  [0.1, 1],
   [0.46, 0],
-  [0.7, 1],
+  [0.7, -1],
   [0.88, 0],
 ] as const;
 
@@ -181,16 +182,16 @@ export function beamPose(t: number): BeamPose {
   return {
     tilt,
     left: {
-      end: screen([-PAN_PLAN[0], PAN_PLAN[1], BEAM_MID + BEAM_DROP * tilt]),
-      pan: disc(-PAN_PLAN[0], PAN_PLAN[1], leftZ, 1.12),
-      rim: disc(-PAN_PLAN[0], PAN_PLAN[1], leftZ, 0.82),
+      end: screen([PAN_LEFT[0], PAN_LEFT[1], BEAM_MID + BEAM_DROP * tilt]),
+      pan: disc(PAN_LEFT[0], PAN_LEFT[1], leftZ, 1.12),
+      rim: disc(PAN_LEFT[0], PAN_LEFT[1], leftZ, 0.82),
       weightDy: -(leftZ - PAN_REF_Z) * U - leftOrder.extra * U,
       weightOpacity: leftOrder.opacity,
     },
     right: {
-      end: screen([PAN_PLAN[0], -PAN_PLAN[1], BEAM_MID - BEAM_DROP * tilt]),
-      pan: disc(PAN_PLAN[0], -PAN_PLAN[1], rightZ, 1.12),
-      rim: disc(PAN_PLAN[0], -PAN_PLAN[1], rightZ, 0.82),
+      end: screen([PAN_RIGHT[0], PAN_RIGHT[1], BEAM_MID - BEAM_DROP * tilt]),
+      pan: disc(PAN_RIGHT[0], PAN_RIGHT[1], rightZ, 1.12),
+      rim: disc(PAN_RIGHT[0], PAN_RIGHT[1], rightZ, 0.82),
       weightDy: -(rightZ - PAN_REF_Z) * U - rightOrder.extra * U,
       weightOpacity: rightOrder.opacity,
     },
