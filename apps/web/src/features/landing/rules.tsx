@@ -24,7 +24,7 @@ export function Rules() {
           </p>
         </div>
 
-        <dl className="self-end bg-secondary/70 px-5">
+        <dl className="self-start bg-secondary/70 px-5">
           {terms.map(({ term, value }) => (
             <div
               key={term}
