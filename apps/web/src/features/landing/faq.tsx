@@ -1,3 +1,10 @@
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@fluke/ui/components/accordion";
+
 import { SectionMark } from "@/components/ui/section-mark";
 
 const faqs = [
@@ -30,23 +37,21 @@ export function Faq() {
           </h2>
         </div>
 
-        <div className="mx-auto mt-16 max-w-3xl divide-y divide-border">
-          {faqs.map(({ q, a }, index) => (
-            <details key={q} open={index === 0} className="group bg-background">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 [&::-webkit-details-marker]:hidden">
-                <span className="font-serif text-xl leading-snug group-hover:text-signal">{q}</span>
-                <span
-                  aria-hidden="true"
-                  className="font-mono text-lg leading-none text-muted-foreground group-hover:text-signal"
-                >
-                  <span className="group-open:hidden">+</span>
-                  <span className="hidden group-open:inline">−</span>
-                </span>
-              </summary>
-              <p className="px-6 pb-6 text-sm leading-relaxed text-muted-foreground">{a}</p>
-            </details>
+        <Accordion
+          defaultValue={[faqs[0].q]}
+          className="mx-auto mt-16 max-w-3xl border-t border-border"
+        >
+          {faqs.map(({ q, a }) => (
+            <AccordionItem key={q} value={q}>
+              <AccordionTrigger className="items-center px-6 py-5 font-serif text-xl leading-snug font-normal hover:text-signal hover:no-underline">
+                {q}
+              </AccordionTrigger>
+              <AccordionContent className="pb-0">
+                <p className="px-6 pb-6 text-sm leading-relaxed text-muted-foreground">{a}</p>
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       </div>
     </section>
   );
