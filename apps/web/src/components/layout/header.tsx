@@ -172,10 +172,10 @@ export default function Header() {
           aria-controls="mobile-menu"
           onClick={() => setMenuOpen(true)}
           className={cn(
-            "inline-flex size-10 items-center justify-center border bg-transparent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 lg:hidden",
+            "inline-flex size-10 items-center justify-center bg-transparent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 lg:hidden",
             overlay
-              ? "border-white/50 text-white hover:border-white hover:bg-white hover:text-[#2036ff] focus-visible:outline-white"
-              : "border-foreground/30 text-foreground hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
+              ? "text-white hover:bg-white hover:text-[#2036ff] focus-visible:outline-white"
+              : "text-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
           )}
         >
           <Menu aria-hidden="true" className="size-5" strokeWidth={1.5} />
