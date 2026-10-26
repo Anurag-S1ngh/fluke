@@ -67,8 +67,9 @@ const seconds = (t: number, at: number, duration: number) => ((t - at) * duratio
 export const BALLOT_LOOP = 6000;
 
 const BALLOT_PIVOT: Flat = [0, -0.9];
-const BALLOT_Z = 2.55;
+const BALLOT_Z = 2.7;
 const BALLOT_R = 3.4;
+const BALLOT_LIFT = 1;
 const BALLOT_YES = Math.atan2(1.4 - BALLOT_PIVOT[1], -2.5 - BALLOT_PIVOT[0]);
 const BALLOT_NO = Math.atan2(1.4 - BALLOT_PIVOT[1], 2.5 - BALLOT_PIVOT[0]);
 
@@ -91,11 +92,13 @@ export function ballotPose(t: number): BallotPose {
     LEVER,
   );
   const angle = BALLOT_YES + (BALLOT_NO - BALLOT_YES) * thrown;
+  // a throw hops the lever clear of the plinth and drops it on the other side
+  const lift = BALLOT_LIFT * Math.sin(Math.PI * clamp01(thrown));
   return {
     tip: screen([
       BALLOT_PIVOT[0] + Math.cos(angle) * BALLOT_R,
       BALLOT_PIVOT[1] + Math.sin(angle) * BALLOT_R,
-      BALLOT_Z,
+      BALLOT_Z + lift,
     ]),
     litYes: 1 - clamp01(thrown),
     litNo: clamp01(thrown),
