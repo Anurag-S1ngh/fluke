@@ -221,19 +221,19 @@ export const NOTICE_STILL = 0.415;
 export function noticePose(phase: number): NoticePose {
   const t = wrap01(phase);
   const out = smooth(span(t, 0.12, 0.36));
-  const back = smooth(span(t, 0.62, 0.86));
+  const back = smooth(span(t, 0.68, 0.88));
   const carX = NOTICE.parkX + (NOTICE.stampX - NOTICE.parkX) * (out - back);
 
   const press = smooth(span(t, 0.36, 0.41)) * (1 - smooth(span(t, 0.43, 0.48)));
-  const ink = 0.5 * smooth(span(t, 0.86, 0.9)) * (1 - smooth(span(t, 0.91, 0.95)));
+  const ink = 0.24 * smooth(span(t, 0.9, 0.94)) * (1 - smooth(span(t, 0.95, 0.99)));
   const headDrop = Math.max(press, ink);
 
-  const markOpacity = t >= 0.4 && t < 0.68 ? smooth(span(t, 0.4, 0.42)) : 0;
-  const sheetDrop = -NOTICE.sheetDrop * smooth(span(t, 0.46, 0.64));
-  const freshDrop = -NOTICE.sheetDrop * (1 - smooth(span(t, 0.52, 0.68)));
-  const clip = smooth(span(t, 0.46, 0.52)) * (1 - smooth(span(t, 0.68, 0.74)));
+  const markOpacity = t >= 0.4 && t < 0.74 ? smooth(span(t, 0.4, 0.42)) : 0;
+  const sheetDrop = -NOTICE.sheetDrop * smooth(span(t, 0.56, 0.7));
+  const freshDrop = -NOTICE.sheetDrop * (1 - smooth(span(t, 0.5, 0.58)));
+  const clip = smooth(span(t, 0.54, 0.6)) * (1 - smooth(span(t, 0.78, 0.84)));
   const trip = smooth(span(t, 0.34, 0.38)) * (1 - smooth(span(t, 0.46, 0.5)));
-  const inkPulse = Math.sin(Math.PI * span(t, 0.86, 0.95));
+  const inkPulse = Math.sin(Math.PI * span(t, 0.9, 0.99));
 
   return {
     carX,

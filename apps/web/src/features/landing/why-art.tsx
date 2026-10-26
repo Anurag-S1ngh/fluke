@@ -9,6 +9,9 @@ import {
   COUNTER_STILL,
   counterCamRadius,
   counterPose,
+  NOTICE,
+  NOTICE_STILL,
+  noticePose,
   STAKE,
   STAKE_STILL,
   stakePose,
@@ -981,126 +984,422 @@ export function NumberArt() {
   );
 }
 
+/* -------------------------------------------------- 03 · settled in public */
+
+const NOTICE_FACE = NOTICE.faceY;
+const SHEET_RECT = faceRect(
+  NOTICE.sheet.x0,
+  NOTICE.sheet.z0,
+  NOTICE.sheet.x1,
+  NOTICE.sheet.z1,
+  NOTICE_FACE,
+);
+const SHEET_CLIP = faceRect(-2.2, 3.18, 1.9, 4.72, NOTICE_FACE);
+
+const onFace = (x: number, z: number) => screen([x, NOTICE_FACE, z]);
+const PINION_REST = screen([NOTICE.parkX, -1.4, 4.72]);
+const TRIP_REST = screen([NOTICE.parkX + 0.55, -1.5, 4.88]);
+
+function SheetLines() {
+  return (
+    <>
+      {([4.36, 4.12, 3.88] as const).map((z, index) => (
+        <line
+          key={z}
+          x1={onFace(-1.55, z)[0]}
+          y1={onFace(-1.55, z)[1]}
+          x2={onFace(index === 0 ? 1.2 : index === 1 ? 0.9 : 1.1, z)[0]}
+          y2={onFace(index === 0 ? 1.2 : index === 1 ? 0.9 : 1.1, z)[1]}
+          className="stroke-foreground/30"
+          strokeWidth={0.8}
+        />
+      ))}
+      <line
+        x1={onFace(-1.55, 3.7)[0]}
+        y1={onFace(-1.55, 3.7)[1]}
+        x2={onFace(0.15, 3.7)[0]}
+        y2={onFace(0.15, 3.7)[1]}
+        className="stroke-foreground/20"
+        strokeWidth={0.7}
+      />
+    </>
+  );
+}
+
+const PINION_POINTS = Array.from({ length: 24 }, (_, index) => {
+  const angle = (index / 24) * Math.PI * 2;
+  return [NOTICE.parkX + Math.cos(angle) * 0.36, -1.4, 4.72 + Math.sin(angle) * 0.36] as Point;
+});
+
+const RACK = Array.from({ length: 30 }, (_, index) => -2.35 + index * 0.16);
+
 /** A question posted in public, dated, and stamped. */
 export function NoticeArt() {
-  const faceY = -1.63;
+  const rest = noticePose(0);
+  const teeth = Array.from({ length: 8 }, (_, index) => (index / 8) * Math.PI * 2);
 
-  const onBoard = (x: number, z: number): [number, number] => screen([x, faceY, z]);
+  const loop = usePlateLoop(WHY_LOOP, NOTICE_STILL, (root) => {
+    const carriage = root.querySelector<SVGGElement>("[data-notice-carriage]");
+    const head = root.querySelector<SVGGElement>("[data-notice-head]");
+    const oldSheet = root.querySelector<SVGGElement>("[data-notice-old]");
+    const freshSheet = root.querySelector<SVGGElement>("[data-notice-fresh]");
+    const clip = root.querySelector<SVGGElement>("[data-notice-clip]");
+    const mark = root.querySelector<SVGGElement>("[data-notice-mark]");
+    const ink = root.querySelector<SVGEllipseElement>("[data-notice-ink]");
+    const trip = root.querySelector<SVGLineElement>("[data-notice-trip]");
+    const toothLines = [...root.querySelectorAll<SVGLineElement>("[data-notice-tooth]")];
+    const spokes = [...root.querySelectorAll<SVGLineElement>("[data-notice-spoke]")];
+    if (
+      !carriage ||
+      !head ||
+      !oldSheet ||
+      !freshSheet ||
+      !clip ||
+      !mark ||
+      !ink ||
+      !trip ||
+      toothLines.length === 0 ||
+      spokes.length === 0
+    ) {
+      return () => {};
+    }
+
+    return (phase) => {
+      const pose = noticePose(phase);
+      const dx = pose.carX - NOTICE.parkX;
+      carriage.setAttribute("transform", `translate(${n(dx * 8.660254)} ${n(dx * 5)})`);
+      head.setAttribute("transform", `translate(0 ${n(pose.headDrop * NOTICE.headTravel * 10)})`);
+      oldSheet.setAttribute("transform", `translate(0 ${n(-pose.sheetDrop * 10)})`);
+      freshSheet.setAttribute("transform", `translate(0 ${n(-pose.freshDrop * 10)})`);
+      clip.setAttribute("transform", `translate(0 ${n(-pose.clip * 1.2)})`);
+      mark.setAttribute("opacity", n(pose.markOpacity));
+      ink.setAttribute("opacity", n(pose.ink * 0.85));
+
+      const spin = dx / 0.36;
+      toothLines.forEach((line, index) => {
+        const angle = spin + teeth[index]!;
+        const inner = screen([
+          NOTICE.parkX + Math.cos(angle) * 0.2,
+          -1.4,
+          4.72 + Math.sin(angle) * 0.2,
+        ]);
+        const outer = screen([
+          NOTICE.parkX + Math.cos(angle) * 0.4,
+          -1.4,
+          4.72 + Math.sin(angle) * 0.4,
+        ]);
+        line.setAttribute("x1", n(inner[0]));
+        line.setAttribute("y1", n(inner[1]));
+        line.setAttribute("x2", n(outer[0]));
+        line.setAttribute("y2", n(outer[1]));
+      });
+      spokes.forEach((spoke, index) => {
+        const angle = spin * 0.6 + (index * Math.PI * 2) / 3;
+        const end = screen([
+          NOTICE.parkX + Math.cos(angle) * 0.14,
+          -1.38,
+          4.72 + Math.sin(angle) * 0.14,
+        ]);
+        spoke.setAttribute("x2", n(end[0]));
+        spoke.setAttribute("y2", n(end[1]));
+      });
+
+      trip.setAttribute("y2", n(TRIP_REST[1] + pose.trip * 3.4));
+    };
+  });
 
   return (
     <svg
+      ref={loop}
       viewBox={ISO_VIEWBOX}
       className="w-full"
       role="presentation"
       aria-hidden="true"
       focusable="false"
     >
+      <defs>
+        <clipPath id="notice-sheet-clip">
+          <polygon points={SHEET_CLIP} />
+        </clipPath>
+      </defs>
+
       <Plate />
+      <PlateTrim />
 
       {/* the two posts, flanking the board */}
       <Slab x={-3.05} y={-2.6} z={0.8} w={0.45} d={0.45} h={4.2} />
       <Slab x={2.6} y={-2.6} z={0.8} w={0.45} d={0.45} h={4.2} />
       <Slab x={-3.15} y={-2.75} z={0.8} w={0.75} d={0.75} h={0.3} />
       <Slab x={2.4} y={-2.75} z={0.8} w={0.75} d={0.75} h={0.3} />
+      {(
+        [
+          [-3.0, -2.6],
+          [2.72, -2.6],
+          [-3.0, -2.18],
+          [2.72, -2.18],
+        ] as const
+      ).map(([x, y]) => (
+        <ellipse key={`${x}-${y}`} {...disc(x, y, 1.105, 0.075)} className="fill-foreground/35" />
+      ))}
 
       {/* the board and its frame */}
       <Slab x={-2.5} y={-2.15} z={2.9} w={5} d={0.5} h={2.1} />
       <Slab x={-2.6} y={-2.25} z={5} w={5.2} d={0.7} h={0.2} />
-
-      {/* the pinned sheet */}
       <polygon
-        points={flat([
-          [-1.85, faceY, 3.3],
-          [1.6, faceY, 3.3],
-          [1.6, faceY, 4.6],
-          [-1.85, faceY, 4.6],
-        ])}
-        className="fill-background stroke-foreground"
-        strokeWidth={0.9}
-      />
-      {[4.35, 4.05, 3.75].map((z, i) => {
-        const [x1, y1] = onBoard(-1.5, z);
-        const [x2, y2] = onBoard(i === 2 ? 0.1 : 1.2, z);
-        return (
-          <line
-            key={z}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            className="stroke-foreground/30"
-            strokeWidth={0.8}
-          />
-        );
-      })}
-      <line
-        x1={onBoard(-1.5, 3.52)[0]}
-        y1={onBoard(-1.5, 3.52)[1]}
-        x2={onBoard(0.9, 3.52)[0]}
-        y2={onBoard(0.9, 3.52)[1]}
-        className="stroke-foreground/20"
+        points={topRect(-2.45, -2.1, 2.45, -1.7, 5.201)}
+        className="fill-none stroke-foreground/20"
         strokeWidth={0.7}
       />
-      {(
-        [
-          [-2.35, 3.05],
-          [2.35, 3.05],
-          [-2.35, 4.85],
-          [2.35, 4.85],
-        ] as const
-      ).map(([x, z]) => (
-        <circle
-          key={`${x}-${z}`}
-          cx={onBoard(x, z)[0]}
-          cy={onBoard(x, z)[1]}
-          r={1.1}
-          className="fill-foreground/35"
-        />
-      ))}
-
-      {/* the date slip and its pin */}
       <polygon
-        points={flat([
-          [0.9, faceY, 3.4],
-          [1.45, faceY, 3.4],
-          [1.45, faceY, 3.95],
-          [0.9, faceY, 3.95],
-        ])}
+        points={faceRect(-2.35, 3.05, 2.35, 4.85, NOTICE_FACE + 0.01)}
+        className="fill-none stroke-foreground/20"
+        strokeWidth={0.8}
+      />
+
+      {/* the filing slot at the foot of the board */}
+      <polygon
+        points={faceRect(-2.1, 3.1, 2.1, 3.18, NOTICE_FACE + 0.02)}
+        className="fill-foreground/70"
+      />
+      <line
+        x1={onFace(-2.1, 3.19)[0]}
+        y1={onFace(-2.1, 3.19)[1]}
+        x2={onFace(2.1, 3.19)[0]}
+        y2={onFace(2.1, 3.19)[1]}
+        className="stroke-foreground"
+        strokeWidth={0.9}
+      />
+      <polygon
+        points={faceRect(-0.8, 2.94, 0.8, 3.04, NOTICE_FACE + 0.02)}
+        className="fill-background stroke-foreground/30"
+        strokeWidth={0.7}
+      />
+      <line
+        x1={onFace(-0.55, 2.99)[0]}
+        y1={onFace(-0.55, 2.99)[1]}
+        x2={onFace(0.35, 2.99)[0]}
+        y2={onFace(0.35, 2.99)[1]}
+        className="stroke-foreground/30"
+        strokeWidth={0.6}
+      />
+
+      {/* the sheets, clipped to the board's opening */}
+      <g clipPath="url(#notice-sheet-clip)">
+        <g data-notice-fresh transform={`translate(0 ${n(-rest.freshDrop * 10)})`}>
+          <polygon
+            points={SHEET_RECT}
+            className="fill-background stroke-foreground"
+            strokeWidth={0.9}
+          />
+          <SheetLines />
+        </g>
+        <g data-notice-old transform={`translate(0 ${n(-rest.sheetDrop * 10)})`}>
+          <polygon
+            points={SHEET_RECT}
+            className="fill-background stroke-foreground"
+            strokeWidth={0.9}
+          />
+          <SheetLines />
+          <g data-notice-mark opacity={rest.markOpacity}>
+            <polygon
+              points={faceRect(-0.4, 3.92, 0.4, 4.04, NOTICE_FACE + 0.02)}
+              className="fill-signal"
+            />
+            <line
+              x1={onFace(-0.4, 4.13)[0]}
+              y1={onFace(-0.4, 4.13)[1]}
+              x2={onFace(0.32, 4.13)[0]}
+              y2={onFace(0.32, 4.13)[1]}
+              className="stroke-foreground/70"
+              strokeWidth={1.1}
+            />
+            <line
+              x1={onFace(-0.4, 4.23)[0]}
+              y1={onFace(-0.4, 4.23)[1]}
+              x2={onFace(0.08, 4.23)[0]}
+              y2={onFace(0.08, 4.23)[1]}
+              className="stroke-foreground/70"
+              strokeWidth={1.1}
+            />
+          </g>
+        </g>
+      </g>
+
+      {/* the clip bar that pins the sheet */}
+      <g data-notice-clip transform={`translate(0 ${n(-rest.clip * 1.2)})`}>
+        <polygon
+          points={faceRect(-1.9, 4.56, 1.6, 4.63, NOTICE_FACE + 0.04)}
+          className="fill-foreground/15 stroke-foreground"
+          strokeWidth={0.9}
+        />
+        {[-1.85, 1.55].map((x) => (
+          <ellipse
+            key={x}
+            {...disc(x, NOTICE_FACE + 0.05, 4.595, 0.05)}
+            className="fill-foreground/50"
+          />
+        ))}
+      </g>
+
+      {/* the date slip and its pin, fixed to the board */}
+      <polygon
+        points={faceRect(0.85, 3.3, 1.45, 3.9, NOTICE_FACE + 0.03)}
         className="fill-background stroke-foreground/40"
         strokeWidth={0.7}
       />
+      {[3.78, 3.66, 3.54].map((z, index) => (
+        <line
+          key={z}
+          x1={onFace(0.94, z)[0]}
+          y1={onFace(0.94, z)[1]}
+          x2={onFace(index === 2 ? 1.18 : 1.36, z)[0]}
+          y2={onFace(index === 2 ? 1.18 : 1.36, z)[1]}
+          className="stroke-foreground/30"
+          strokeWidth={0.6}
+        />
+      ))}
       <circle
-        cx={onBoard(1.18, 3.82)[0]}
-        cy={onBoard(1.18, 3.82)[1]}
+        cx={onFace(1.15, 3.82)[0]}
+        cy={onFace(1.15, 3.82)[1]}
         r={1.9}
         className="fill-signal stroke-signal"
       />
 
-      {/* the stamp and its ink pad, waiting on the plate */}
-      <Slab x={-3} y={0.7} z={0.8} w={1.6} d={1.5} h={0.35} />
+      {/* the top rail and its rack */}
+      <Slab x={-2.45} y={-1.55} z={4.86} w={4.9} d={0.1} h={0.14} />
+      <Slab x={-2.6} y={-2.15} z={4.84} w={0.2} d={0.7} h={0.12} />
+      <Slab x={2.4} y={-2.15} z={4.84} w={0.2} d={0.7} h={0.12} />
+      {RACK.map((x) => (
+        <line
+          key={x}
+          x1={screen([x, -1.449, 4.87])[0]}
+          y1={screen([x, -1.449, 4.87])[1]}
+          x2={screen([x, -1.449, 4.96])[0]}
+          y2={screen([x, -1.449, 4.96])[1]}
+          className="stroke-foreground/30"
+          strokeWidth={0.6}
+        />
+      ))}
+      <Slab x={0.32} y={-1.62} z={4.83} w={0.16} d={0.24} h={0.14} />
+      <ellipse {...disc(0.4, -1.55, 4.975, 0.05)} className="fill-foreground/40" />
+
+      {/* the ink tray on its bracket */}
+      <Slab x={2.5} y={-2.15} z={4.02} w={0.45} d={0.85} h={0.1} />
+      <Slab x={1.85} y={-1.9} z={4.12} w={0.7} d={0.6} h={0.12} />
+      <polygon points={topRect(1.9, -1.85, 2.5, -1.35, 4.23)} className="fill-foreground/75" />
       <polygon
-        points={flat([
-          [-2.8, 0.9, 1.16],
-          [-1.6, 0.9, 1.16],
-          [-1.6, 1.95, 1.16],
-          [-2.8, 1.95, 1.16],
-        ])}
-        className="fill-foreground/30 stroke-foreground/40"
+        points={topRect(1.87, -1.88, 2.53, -1.32, 4.24)}
+        className="fill-none stroke-foreground/40"
         strokeWidth={0.7}
       />
-      <Slab x={1.1} y={0.8} z={0.8} w={1.65} d={1.35} h={0.5} />
-      <Slab x={1.2} y={0.9} z={1.3} w={1.45} d={1.15} h={0.08} />
-      <Slab x={1.65} y={1.25} z={1.38} w={0.45} d={0.45} h={1.15} />
       <ellipse
-        {...disc(1.875, 1.475, 2.5, 0.38)}
-        className="fill-foreground/15 stroke-foreground"
-        strokeWidth={1}
+        data-notice-ink
+        {...disc(2.2, -1.6, 4.25, 0.24)}
+        opacity={rest.ink * 0.85}
+        className="fill-none stroke-signal"
+        strokeWidth={1.1}
       />
-      <ellipse
-        {...disc(1.875, 1.475, 2.58, 0.38)}
-        className="fill-background stroke-foreground"
-        strokeWidth={1}
-      />
+
+      {/* the carriage, its pinion and the stamp head */}
+      <g data-notice-carriage>
+        <Slab x={NOTICE.parkX - 0.36} y={-1.72} z={4.6} w={0.72} d={0.3} h={0.3} />
+        {(
+          [
+            [NOTICE.parkX - 0.32, -1.74],
+            [NOTICE.parkX + 0.02, -1.74],
+          ] as const
+        ).map(([x, y]) => (
+          <Slab key={x} x={x} y={y} z={4.58} w={0.3} d={0.34} h={0.34} />
+        ))}
+        <Slab x={NOTICE.parkX - 0.05} y={-1.68} z={4.3} w={0.1} d={0.1} h={0.32} />
+        <line
+          data-notice-trip
+          x1={screen([NOTICE.parkX + 0.15, -1.5, 4.86])[0]}
+          y1={screen([NOTICE.parkX + 0.15, -1.5, 4.86])[1]}
+          x2={TRIP_REST[0]}
+          y2={TRIP_REST[1]}
+          className="stroke-foreground"
+          strokeWidth={1.4}
+          strokeLinecap="round"
+        />
+        <circle
+          cx={screen([NOTICE.parkX + 0.15, -1.5, 4.86])[0]}
+          cy={screen([NOTICE.parkX + 0.15, -1.5, 4.86])[1]}
+          r={1.5}
+          className="fill-background stroke-foreground"
+          strokeWidth={0.8}
+        />
+
+        <polygon
+          points={flat(PINION_POINTS)}
+          className="fill-background stroke-foreground"
+          strokeWidth={0.9}
+        />
+        {teeth.map((angle, index) => {
+          const inner = screen([
+            NOTICE.parkX + Math.cos(angle) * 0.2,
+            -1.4,
+            4.72 + Math.sin(angle) * 0.2,
+          ]);
+          const outer = screen([
+            NOTICE.parkX + Math.cos(angle) * 0.4,
+            -1.4,
+            4.72 + Math.sin(angle) * 0.4,
+          ]);
+          return (
+            <line
+              key={`tooth-${index}`}
+              data-notice-tooth
+              x1={inner[0]}
+              y1={inner[1]}
+              x2={outer[0]}
+              y2={outer[1]}
+              className="stroke-foreground"
+              strokeWidth={0.8}
+            />
+          );
+        })}
+        <circle
+          cx={PINION_REST[0]}
+          cy={PINION_REST[1]}
+          r={2}
+          className="fill-background stroke-foreground"
+          strokeWidth={0.9}
+        />
+        {[0, 1, 2].map((index) => {
+          const angle = (index * Math.PI * 2) / 3;
+          const end = screen([
+            NOTICE.parkX + Math.cos(angle) * 0.14,
+            -1.38,
+            4.72 + Math.sin(angle) * 0.14,
+          ]);
+          return (
+            <line
+              key={`spoke-${index}`}
+              data-notice-spoke
+              x1={PINION_REST[0]}
+              y1={PINION_REST[1]}
+              x2={end[0]}
+              y2={end[1]}
+              className="stroke-foreground"
+              strokeWidth={0.9}
+            />
+          );
+        })}
+
+        <g data-notice-head transform={`translate(0 ${n(rest.headDrop * NOTICE.headTravel * 10)})`}>
+          <Slab x={NOTICE.parkX - 0.4} y={-1.92} z={4.3} w={0.8} d={0.46} h={0.26} />
+          <polygon
+            points={faceRect(NOTICE.parkX - 0.32, 4.34, NOTICE.parkX + 0.32, 4.52, -1.439)}
+            className="fill-none stroke-foreground/45"
+            strokeWidth={0.7}
+          />
+          <polygon
+            points={faceRect(NOTICE.parkX - 0.34, 4.3, NOTICE.parkX + 0.34, 4.36, -1.438)}
+            className="fill-foreground/25"
+          />
+        </g>
+      </g>
 
       {/* the finials */}
       <Slab x={-3.05} y={-2.6} z={5} w={0.45} d={0.45} h={0.35} />
