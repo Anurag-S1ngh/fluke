@@ -61,8 +61,8 @@ const seconds = (t: number, at: number, duration: number) => ((t - at) * duratio
 /* ------------------------------------------------------- 01 · take a side */
 /**
  * The lever is thrown across the front of the plate: YES sits over the left
- * side, NO over the right. Both ends are the same radius and height, so the
- * tip travels a true arc in the plate's plane.
+ * side, NO over the right. Both ends are the same radius, so the tip travels a
+ * true arc; it lifts over the plinth as it crosses and drops onto the far side.
  */
 export const BALLOT_LOOP = 6000;
 
@@ -108,8 +108,9 @@ export function ballotPose(t: number): BallotPose {
 /* ------------------------------------------------------- 02 · set the price */
 /**
  * Two orders on two pans. The beam is a balance, so the heavier side drops:
- * load is ±1 while one pan is empty and 0 when they match. The pans hang from
- * the beam ends and recoil when an order lands or lifts.
+ * `tilt` is +1 when only the right pan is loaded (the left rises) and -1 the
+ * other way, so the beam settles level only when the two sides match. The pans
+ * hang from the beam ends and recoil when an order lands or lifts.
  */
 export const BEAM_LOOP = 9000;
 
