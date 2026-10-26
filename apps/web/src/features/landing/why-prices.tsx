@@ -4,21 +4,29 @@ import { SectionMark } from "@/components/ui/section-mark";
 
 import { NoticeArt, NumberArt, TurnstileArt } from "./why-art";
 
-const features: { title: string; body: string; art: React.ReactNode }[] = [
+const features: {
+  title: string;
+  body: string;
+  art: React.ReactNode;
+  width: string;
+}[] = [
   {
     title: "Skin in the game",
     body: "Polls record what people say. Prices record what they will back with money — a harder signal to fake.",
     art: <TurnstileArt />,
+    width: "w-full max-w-[21rem]",
   },
   {
     title: "One number",
     body: "No pundit panel, no thread to decode. The price is the forecast, updated on every trade.",
     art: <NumberArt />,
+    width: "w-full max-w-[21rem]",
   },
   {
     title: "Settled in public",
     body: "Each question states its source and date up front. If it cannot resolve as written, everyone is refunded.",
     art: <NoticeArt />,
+    width: "w-[88%] max-w-[18rem]",
   },
 ];
 
@@ -34,10 +42,10 @@ export function WhyPrices() {
         </div>
 
         <ul className="mx-auto mt-16 max-w-6xl divide-y divide-foreground/15 border border-foreground/15">
-          {features.map(({ title, body, art }, index) => (
+          {features.map(({ title, body, art, width }, index) => (
             <li key={title} className="grid items-stretch sm:grid-cols-2">
               <div className="flex items-center justify-center border-b border-foreground/15 bg-secondary/40 px-8 py-10 sm:border-r sm:border-b-0">
-                <div className="w-full max-w-[21rem]">{art}</div>
+                <div className={width}>{art}</div>
               </div>
               <div className="flex flex-col justify-center px-8 py-10 sm:px-12">
                 <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
