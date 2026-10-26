@@ -1,7 +1,7 @@
 "use client";
 
 import { Coin, disc, flat, Plate, screen, Slab } from "./mini-iso";
-import { useStepsLoop } from "./steps-loop";
+import { usePlateLoop } from "./plate-loop";
 import {
   BALLOT_LOOP,
   ballotPose,
@@ -22,7 +22,7 @@ const BALLOT_PIVOT = screen([0, -0.9, 2.7]);
 export function BallotArt() {
   const rest = ballotPose(0);
 
-  const loop = useStepsLoop(BALLOT_LOOP, 0, (root) => {
+  const loop = usePlateLoop(BALLOT_LOOP, 0, (root) => {
     const lever = root.querySelector<SVGLineElement>("[data-lever]");
     const tip = root.querySelector<SVGCircleElement>("[data-lever-tip]");
     const yes = root.querySelector<SVGGElement>("[data-side-yes]");
@@ -91,7 +91,7 @@ export function BeamArt() {
   const leftWeight = { x: -2.75, y: 1.85, w: 0.9, d: 0.9, h: 0.5 };
   const rightWeight = { x: 1.85, y: -2.75, w: 0.9, d: 0.9, h: 0.7 };
 
-  const loop = useStepsLoop(BEAM_LOOP, 0, (root) => {
+  const loop = usePlateLoop(BEAM_LOOP, 0, (root) => {
     const beam = root.querySelector<SVGLineElement>("[data-beam]");
     const leftHang = root.querySelector<SVGLineElement>("[data-left-hang]");
     const rightHang = root.querySelector<SVGLineElement>("[data-right-hang]");
@@ -236,7 +236,7 @@ export function BeamArt() {
 export function PayoutArt() {
   const rest = payoutPose(0);
 
-  const loop = useStepsLoop(PAYOUT_LOOP, PAYOUT_STILL, (root) => {
+  const loop = usePlateLoop(PAYOUT_LOOP, PAYOUT_STILL, (root) => {
     const share = root.querySelector<SVGGElement>("[data-share]");
     const trail = root.querySelector<SVGPathElement>("[data-trail]");
     if (!share || !trail) return () => {};

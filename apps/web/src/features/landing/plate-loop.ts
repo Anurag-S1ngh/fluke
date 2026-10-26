@@ -5,13 +5,15 @@ import * as React from "react";
 type Frame = (phase: number) => void;
 
 /**
- * Drives one station on the plate. The station is painted once at rest for the
- * server and again for `prefers-reduced-motion`; otherwise it loops on a single
- * rAF clock while it is on screen and the tab is visible.
+ * Drives one plate figure. The figure is painted once at rest for the server
+ * and again for `prefers-reduced-motion`; otherwise it loops on a single rAF
+ * clock while it is on screen and the tab is visible.
  *
  * `create` reads the settled markup once and returns the per-frame painter.
+ * Every station on a shared cycle passes the same `duration`, so their beats
+ * stay together without a shared provider or a React render per frame.
  */
-export function useStepsLoop(
+export function usePlateLoop(
   duration: number,
   still: number,
   create: (root: SVGSVGElement) => Frame,
