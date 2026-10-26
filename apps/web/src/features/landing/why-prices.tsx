@@ -34,13 +34,16 @@ export function WhyPrices() {
         </div>
 
         <ul className="mx-auto mt-16 max-w-6xl divide-y divide-foreground/15 border border-foreground/15">
-          {features.map(({ title, body, art }) => (
+          {features.map(({ title, body, art }, index) => (
             <li key={title} className="grid items-stretch sm:grid-cols-2">
-              <div className="flex items-center justify-center border-b border-foreground/15 bg-secondary/40 px-6 py-8 sm:border-r sm:border-b-0">
-                <div className="w-full max-w-[15rem]">{art}</div>
+              <div className="flex items-center justify-center border-b border-foreground/15 bg-secondary/40 px-8 py-10 sm:border-r sm:border-b-0">
+                <div className="w-full max-w-[18rem]">{art}</div>
               </div>
               <div className="flex flex-col justify-center px-8 py-10 sm:px-12">
-                <h3 className="font-serif text-2xl">{title}</h3>
+                <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
+                  Fig. {String(index + 1).padStart(2, "0")}
+                </p>
+                <h3 className="mt-2 font-serif text-2xl">{title}</h3>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
                   {body}
                 </p>
