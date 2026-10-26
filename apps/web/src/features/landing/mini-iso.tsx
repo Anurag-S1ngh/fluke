@@ -88,19 +88,22 @@ export function Coin({
   z,
   r = 0.8,
   signal = false,
+  thickness = 2.8,
 }: {
   x: number;
   y: number;
   z: number;
   r?: number;
   signal?: boolean;
+  /** Screen px between the top face and the edge, for smaller coins. */
+  thickness?: number;
 }) {
   const { cx, cy, rx, ry } = disc(x, y, z, r);
   return (
     <g strokeWidth={1} className={signal ? "stroke-signal" : "stroke-foreground"}>
       <ellipse
         cx={cx}
-        cy={cy + 2.8}
+        cy={cy + thickness}
         rx={rx}
         ry={ry}
         className={signal ? "fill-signal/60" : "fill-foreground/15"}

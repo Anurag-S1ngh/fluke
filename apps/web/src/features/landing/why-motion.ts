@@ -54,13 +54,13 @@ export const STAKE = {
   die: { x: 0, y: -0.9 },
   pressTravel: 0.5,
   wheel: { x: 0.05, y: -1.55, z: 6.12, r: 0.82 },
-  coinStart: [2.95, 2.55, 3.02] as Point3,
-  coinRampEnd: [1.52, 1.42, 2.18] as Point3,
-  coinCup: [1.15, 1.05, 1.78] as Point3,
-  coinRadius: 0.34,
-  cup: { x: 1.15, y: 1.05, r: 0.42 },
+  coinStart: [3, -0.55, 2.9] as Point3,
+  coinRampEnd: [1.5, 1.05, 2.35] as Point3,
+  coinCup: [1, 1.22, 1.8] as Point3,
+  coinRadius: 0.42,
+  cup: { x: 1, y: 1.22, r: 0.5 },
   drawer: { x: 0, y: 1.75, w: 1.45, z0: 0.88, z1: 1.55 },
-  chuteFoot: { x: 3.05, y: 2.7 },
+  chuteFoot: { x: 3.05, y: 1.15 },
   /** Left edge of the printed block on the tape before any feed. */
   printX0: -0.5,
   printWidth: 1,
@@ -94,20 +94,16 @@ export function stakePose(phase: number): StakePose {
 
   let coin: Point3 = lerp3(STAKE.coinStart, STAKE.coinRampEnd, ramp);
   if (ontoCup > 0) {
-    // a small hop off the end of the chute, then it drops into the cup
     coin = lerp3(coin, STAKE.coinCup, ontoCup);
-    coin[2] += 0.18 * Math.sin(Math.PI * ontoCup);
   }
   if (falling > 0) {
     coin = [STAKE.coinCup[0], STAKE.coinCup[1], STAKE.coinCup[2] - 1.0 * falling];
   }
 
-  const coinOpacity =
-    t < 0.02 || t > 0.6 ? 0 : 1 - smooth(span(t, 0.545, 0.595));
+  const coinOpacity = t < 0.02 || t > 0.6 ? 0 : 1 - smooth(span(t, 0.545, 0.595));
 
   const wheel = Math.PI * 2 * smooth(span(t, 0.22, 0.56));
-  const ram =
-    smooth(span(t, 0.27, 0.4)) * (1 - smooth(span(t, 0.42, 0.54)));
+  const ram = smooth(span(t, 0.27, 0.4)) * (1 - smooth(span(t, 0.42, 0.54)));
   const feed = t < 0.72 ? smooth(span(t, 0.52, 0.72)) : 0;
 
   const printed = t >= 0.4 && t < 0.74;
@@ -115,14 +111,10 @@ export function stakePose(phase: number): StakePose {
     ? smooth(span(t, 0.4, 0.42)) * (1 - smooth(span(feed, 0.88, 0.98)))
     : 0;
 
-  const armed =
-    smooth(span(t, 0.17, 0.24)) * (1 - smooth(span(t, 0.52, 0.58)));
+  const armed = smooth(span(t, 0.17, 0.24)) * (1 - smooth(span(t, 0.52, 0.58)));
 
   const flash =
-    t < 0.39
-      ? 0
-      : Math.exp(-Math.max(0, t - 0.4) / 0.045) *
-        smooth(span(t, 0.395, 0.41));
+    t < 0.39 ? 0 : Math.exp(-Math.max(0, t - 0.4) / 0.045) * smooth(span(t, 0.395, 0.41));
 
   return { coin, coinOpacity, wheel, ram, feed, markOpacity, armed, flash };
 }
@@ -228,10 +220,8 @@ export function noticePose(phase: number): NoticePose {
   const back = smooth(span(t, 0.62, 0.86));
   const carX = NOTICE.parkX + (NOTICE.stampX - NOTICE.parkX) * (out - back);
 
-  const press =
-    smooth(span(t, 0.36, 0.41)) * (1 - smooth(span(t, 0.43, 0.48)));
-  const ink =
-    0.5 * smooth(span(t, 0.86, 0.9)) * (1 - smooth(span(t, 0.91, 0.95)));
+  const press = smooth(span(t, 0.36, 0.41)) * (1 - smooth(span(t, 0.43, 0.48)));
+  const ink = 0.5 * smooth(span(t, 0.86, 0.9)) * (1 - smooth(span(t, 0.91, 0.95)));
   const headDrop = Math.max(press, ink);
 
   const markOpacity = t >= 0.4 && t < 0.68 ? smooth(span(t, 0.4, 0.42)) : 0;
