@@ -147,7 +147,7 @@ export function MobileNav({
 
         <nav aria-label="Primary" className="flex-1 overflow-y-auto overscroll-contain">
           <ul>
-            {links.map(({ href, label }, index) => {
+            {links.map(({ href, label }) => {
               const active = pathname === href || pathname.startsWith(`${href}/`);
               return (
                 <li key={href} className="border-b border-border">
@@ -156,7 +156,7 @@ export function MobileNav({
                     onClick={onClose}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-baseline justify-between gap-4 px-6 py-5 transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground",
+                      "block px-6 py-5 transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground",
                       active && "text-signal",
                     )}
                   >
@@ -167,9 +167,6 @@ export function MobileNav({
                       )}
                     >
                       {label}
-                    </span>
-                    <span className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
-                      {String(index + 1).padStart(2, "0")}
                     </span>
                   </Link>
                 </li>
