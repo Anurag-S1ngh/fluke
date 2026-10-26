@@ -39,84 +39,104 @@ const wrap01 = (value: number) => value - Math.floor(value);
 
 /* ------------------------------------------------ 01 · skin in the game */
 /**
- * A coin-operated stamp press. The coin arrives on the chute, seats in the cup
- * and arms the press; the hand wheel turns one revolution, the die prints the
- * claim on the paper tape, the coin drops into the drawer, the tape indexes
- * one section and the next blank section is waiting. The tape's holes repeat
- * exactly eight times across the feed, so the reset at the seam is invisible.
+ * A coin-operated turnstile beside a poll box. The ballot slides into the box
+ * and nothing moves. The coin drops into a bucket on the rotor; its weight
+ * carries the four-arm gate a quarter turn, the bucket trips at the far side
+ * and the coin falls into the locked base. Four arms and four buckets make the
+ * quarter turn land on the identical pose, so the loop closes without a jump.
  */
-export const STAKE = {
-  platen: { x: -2.55, y: -2.4, w: 4.1, d: 4.15, h: 0.9 },
-  paper: { x0: -2.1, x1: 1.35, y0: -1.35, y1: 0.75, z: 1.77 },
-  paperHolePitch: 0.325,
-  /** The tape moves eight hole pitches per cycle. */
-  paperFeed: 2.6,
-  die: { x: 0, y: -0.9 },
-  pressTravel: 0.5,
-  wheel: { x: 0.05, y: -1.55, z: 6.12, r: 0.82 },
-  coinStart: [3, -0.55, 2.9] as Point3,
-  coinRampEnd: [1.5, 1.05, 2.35] as Point3,
-  coinCup: [1, 1.22, 1.8] as Point3,
-  coinRadius: 0.42,
-  cup: { x: 1, y: 1.22, r: 0.5 },
-  drawer: { x: 0, y: 1.75, w: 1.45, z0: 0.88, z1: 1.55 },
-  chuteFoot: { x: 3.05, y: 1.15 },
-  /** Left edge of the printed block on the tape before any feed. */
-  printX0: -0.5,
-  printWidth: 1,
+export const TURNSTILE = {
+  coinStart: [2.45, 0.55, 2.45] as Point3,
+  coinSlot: [2.45, 0.55, 2.0] as Point3,
+  coinChuteEnd: [0.58, 0.58, 1.92] as Point3,
+  coinCupZ: 1.62,
+  bucketRadius: 0.72,
+  bucketStart: Math.PI / 4,
+  quarter: Math.PI / 2,
+  coinRadius: 0.28,
+  ballot: {
+    x0: -2.65,
+    x1: -2.05,
+    yStart: 2.3,
+    yEnd: 1.45,
+    z: 1.56,
+    dropFrom: 2.3,
+  },
+  arms: { z0: 2.14, z1: 2.3, inner: 0.3, outer: 1.9, half: 0.12 },
+  post: { x: 2.3, y: 0.25, top: 2.1 },
+  box: { x0: -3, x1: -1.7, y0: 1.15, y1: 2.55, top: 1.55, slotY: 1.42 },
 } as const;
 
-export interface StakePose {
-  /** Centre of the coin, in world units. */
+export interface TurnstilePose {
+  /** Centre of the poll card. */
+  ballot: Point3;
+  ballotOpacity: number;
   coin: Point3;
   coinOpacity: number;
-  /** Radians turned by the hand wheel. */
-  wheel: number;
-  /** 0..1 of the press travel. */
-  ram: number;
-  /** 0..1 of the tape feed. */
-  feed: number;
-  markOpacity: number;
-  /** The coin is in the cup and the press is armed. */
+  /** Radians turned by the four-arm gate. */
+  angle: number;
+  /** 0..1 through the quarter turn. */
+  turn: number;
+  /** The coin is in its bucket and the gate is armed. */
   armed: number;
-  /** Impact flash at the die. */
-  flash: number;
+  /** Pawl bounce after the detent. */
+  pawl: number;
 }
 
-export const STAKE_STILL = 0.405;
+export const TURNSTILE_STILL = 0.56;
 
-export function stakePose(phase: number): StakePose {
+export function turnstilePose(phase: number): TurnstilePose {
   const t = wrap01(phase);
 
-  const ramp = smooth(span(t, 0.03, 0.13));
-  const ontoCup = smooth(span(t, 0.13, 0.18));
-  const falling = smooth(span(t, 0.52, 0.6));
+  /* the poll card: lands on the box, then slides back under the slot lip */
+  const landing = smooth(span(t, 0.02, 0.1));
+  const slide = smooth(span(t, 0.1, 0.2));
+  const ballot: Point3 = [
+    (TURNSTILE.ballot.x0 + TURNSTILE.ballot.x1) / 2,
+    TURNSTILE.ballot.yStart + (TURNSTILE.ballot.yEnd - TURNSTILE.ballot.yStart) * slide,
+    TURNSTILE.ballot.dropFrom + (TURNSTILE.ballot.z - TURNSTILE.ballot.dropFrom) * landing,
+  ];
+  const ballotOpacity = t < 0.02 || t > 0.22 ? 0 : 1;
 
-  let coin: Point3 = lerp3(STAKE.coinStart, STAKE.coinRampEnd, ramp);
-  if (ontoCup > 0) {
-    coin = lerp3(coin, STAKE.coinCup, ontoCup);
-  }
+  /* the coin: through the slot, across the chute, into the front-right bucket */
+  const down = smooth(span(t, 0.24, 0.32));
+  const across = smooth(span(t, 0.32, 0.42));
+  const intoCup = smooth(span(t, 0.42, 0.46));
+
+  const turn = smooth(span(t, 0.48, 0.66));
+  const settle = t > 0.64 ? 0.02 * Math.exp(-(t - 0.64) / 0.05) * Math.sin((t - 0.64) * 70) : 0;
+  const angleValue = TURNSTILE.quarter * turn + settle;
+  const cupAngle = TURNSTILE.bucketStart + angleValue;
+  const cup: Point3 = [
+    Math.cos(cupAngle) * TURNSTILE.bucketRadius,
+    Math.sin(cupAngle) * TURNSTILE.bucketRadius,
+    TURNSTILE.coinCupZ,
+  ];
+
+  let coin: Point3 = lerp3(TURNSTILE.coinStart, TURNSTILE.coinSlot, down);
+  if (across > 0) coin = lerp3(coin, TURNSTILE.coinChuteEnd, across);
+  if (intoCup > 0) coin = lerp3(coin, cup, intoCup);
+  if (t >= 0.46) coin = [cup[0], cup[1], TURNSTILE.coinCupZ];
+
+  const falling = smooth(span(t, 0.6, 0.65));
   if (falling > 0) {
-    coin = [STAKE.coinCup[0], STAKE.coinCup[1], STAKE.coinCup[2] - 0.16 * falling];
+    coin = [cup[0], cup[1], TURNSTILE.coinCupZ - 0.4 * falling];
   }
+  const coinOpacity = t < 0.24 || t > 0.65 ? 0 : 1 - smooth(span(t, 0.6, 0.63));
 
-  const coinOpacity = t < 0.02 || t > 0.57 ? 0 : 1 - smooth(span(t, 0.52, 0.56));
+  const armed = smooth(span(t, 0.44, 0.5)) * (1 - smooth(span(t, 0.58, 0.62)));
+  const pawl = t < 0.64 ? 0 : Math.exp(-(t - 0.64) / 0.04) * Math.sin((t - 0.64) * 90);
 
-  const wheel = Math.PI * 2 * smooth(span(t, 0.22, 0.56));
-  const ram = smooth(span(t, 0.27, 0.4)) * (1 - smooth(span(t, 0.42, 0.54)));
-  const feed = t < 0.72 ? smooth(span(t, 0.52, 0.72)) : 0;
-
-  const printed = t >= 0.4 && t < 0.74;
-  const markOpacity = printed
-    ? smooth(span(t, 0.4, 0.42)) * (1 - smooth(span(feed, 0.88, 0.98)))
-    : 0;
-
-  const armed = smooth(span(t, 0.17, 0.24)) * (1 - smooth(span(t, 0.52, 0.58)));
-
-  const flash =
-    t < 0.39 ? 0 : Math.exp(-Math.max(0, t - 0.4) / 0.045) * smooth(span(t, 0.395, 0.41));
-
-  return { coin, coinOpacity, wheel, ram, feed, markOpacity, armed, flash };
+  return {
+    ballot,
+    ballotOpacity,
+    coin,
+    coinOpacity,
+    angle: angleValue,
+    turn,
+    armed,
+    pawl,
+  };
 }
 
 /* ------------------------------------------------------- 02 · one number */

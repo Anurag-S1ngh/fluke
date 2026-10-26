@@ -12,9 +12,9 @@ import {
   NOTICE,
   NOTICE_STILL,
   noticePose,
-  STAKE,
-  STAKE_STILL,
-  stakePose,
+  TURNSTILE,
+  TURNSTILE_STILL,
+  turnstilePose,
   WHY_LOOP,
 } from "./why-motion";
 
@@ -23,6 +23,8 @@ const shift = ([dx, dy, dz]: Point): [number, number] => [
   (dx - dy) * 8.660254,
   (dx + dy) * 5 - dz * 10,
 ];
+
+const n = (value: number) => (Math.round(value * 100) / 100).toString();
 
 /** A rectangle standing in a face at a fixed y. */
 const faceRect = (x0: number, z0: number, x1: number, z1: number, y: number) =>
@@ -51,13 +53,10 @@ const sideRect = (y0: number, z0: number, y1: number, z1: number, x: number) =>
     [x, y0, z1],
   ]);
 
-const n = (value: number) => (Math.round(value * 100) / 100).toString();
-
 /** The machined trim every plate carries: a rooted ruler and a label plate. */
-function PlateTrim({ narrow = false }: { narrow?: boolean }) {
+function PlateTrim({ label = true }: { label?: boolean }) {
   const ticks: React.ReactNode[] = [];
-  const end = narrow ? 2.25 : 3.05;
-  for (let x = -3; x <= end; x += 0.4) {
+  for (let x = -3; x <= 3.05; x += 0.4) {
     const major = Math.round((x + 3) / 0.4) % 4 === 0;
     ticks.push(
       <line
@@ -74,151 +73,204 @@ function PlateTrim({ narrow = false }: { narrow?: boolean }) {
 
   return (
     <>
-      <Slab x={-3.2} y={2.9} z={0.8} w={narrow ? 5.65 : 6.4} d={0.3} h={0.03} />
+      <Slab x={-3.2} y={2.9} z={0.8} w={6.4} d={0.3} h={0.03} />
       {ticks}
-      <Slab x={-3.3} y={1.7} z={0.8} w={1.35} d={0.85} h={0.04} />
-      <polygon
-        points={topRect(-3.24, 1.76, -2.01, 2.49, 0.851)}
-        className="fill-none stroke-foreground/30"
-        strokeWidth={0.7}
-      />
-      {[2.36, 2.15, 1.94].map((y, index) => (
-        <line
-          key={y}
-          x1={screen([-3.14, y, 0.852])[0]}
-          y1={screen([-3.14, y, 0.852])[1]}
-          x2={screen([index === 2 ? -2.55 : -2.2, y, 0.852])[0]}
-          y2={screen([index === 2 ? -2.55 : -2.2, y, 0.852])[1]}
-          className="stroke-foreground/40"
-          strokeWidth={0.7}
-        />
-      ))}
-      {(
-        [
-          [-3.16, 1.84],
-          [-2.09, 2.41],
-        ] as const
-      ).map(([x, y]) => (
-        <ellipse key={`${x}-${y}`} {...disc(x, y, 0.853, 0.075)} className="fill-foreground/35" />
-      ))}
+      {label && (
+        <>
+          <Slab x={-3.3} y={1.7} z={0.8} w={1.35} d={0.85} h={0.04} />
+          <polygon
+            points={topRect(-3.24, 1.76, -2.01, 2.49, 0.851)}
+            className="fill-none stroke-foreground/30"
+            strokeWidth={0.7}
+          />
+          {[2.36, 2.15, 1.94].map((y, index) => (
+            <line
+              key={y}
+              x1={screen([-3.14, y, 0.852])[0]}
+              y1={screen([-3.14, y, 0.852])[1]}
+              x2={screen([index === 2 ? -2.55 : -2.2, y, 0.852])[0]}
+              y2={screen([index === 2 ? -2.55 : -2.2, y, 0.852])[1]}
+              className="stroke-foreground/40"
+              strokeWidth={0.7}
+            />
+          ))}
+          {(
+            [
+              [-3.16, 1.84],
+              [-2.09, 2.41],
+            ] as const
+          ).map(([x, y]) => (
+            <ellipse
+              key={`${x}-${y}`}
+              {...disc(x, y, 0.853, 0.075)}
+              className="fill-foreground/35"
+            />
+          ))}
+        </>
+      )}
     </>
   );
 }
 
-/** Paper holes repeat eight times across one feed, so the reset is invisible. */
-const PAPER_HOLES = Array.from({ length: 18 }, (_, index) =>
-  [-1.28, 0.68].map((y) => [-3.4 + index * STAKE.paperHolePitch, y] as const),
-).flat();
+/* ------------------------------------------------ 01 · skin in the game */
 
-const PAPER_CLIP = flat([
-  [STAKE.paper.x0, STAKE.paper.y0, STAKE.paper.z],
-  [STAKE.paper.x1, STAKE.paper.y0, STAKE.paper.z],
-  [STAKE.paper.x1, STAKE.paper.y1, STAKE.paper.z],
-  [STAKE.paper.x0, STAKE.paper.y1, STAKE.paper.z],
+interface ArmFaces {
+  sideA: string;
+  sideB: string;
+  end: string;
+  top: string;
+}
+
+/** One arm of the gate as four projected faces, rebuilt for its angle. */
+function armFaces(angle: number): ArmFaces {
+  const { inner, outer, half, z0, z1 } = TURNSTILE.arms;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const px = -Math.sin(angle) * half;
+  const py = Math.cos(angle) * half;
+  const top = (r: number, side: number): Point => [dx * r + px * side, dy * r + py * side, z1];
+  const bottom = (r: number, side: number): Point => [dx * r + px * side, dy * r + py * side, z0];
+  const ti = top(inner, 1);
+  const to = top(outer, 1);
+  const uo = top(outer, -1);
+  const ui = top(inner, -1);
+  const bi = bottom(inner, 1);
+  const bo = bottom(outer, 1);
+  const ubo = bottom(outer, -1);
+  const ubi = bottom(inner, -1);
+  return {
+    sideA: flat([ti, to, bo, bi]),
+    sideB: flat([ui, uo, ubo, ubi]),
+    end: flat([to, uo, ubo, bo]),
+    top: flat([ti, to, uo, ui]),
+  };
+}
+
+const ARM_REST = [0, 1, 2, 3].map((index) => armFaces((index * Math.PI) / 2));
+const BUCKET_CENTRES = [0, 1, 2, 3].map((index) => {
+  const angle = Math.PI / 4 + (index * Math.PI) / 2;
+  return [
+    Math.cos(angle) * TURNSTILE.bucketRadius,
+    Math.sin(angle) * TURNSTILE.bucketRadius,
+  ] as const;
+});
+const COIN_REST = screen([BUCKET_CENTRES[0][0], BUCKET_CENTRES[0][1], TURNSTILE.coinCupZ]);
+const TICKS = Array.from({ length: 12 }, (_, index) => (index * Math.PI) / 6);
+
+/** The chute from the coin post to the front bucket. */
+const CHUTE_START: Point = [2.45, 0.55, 1.98];
+const CHUTE_END: Point = [0.62, 0.58, 1.8];
+const CHUTE_LEN = Math.hypot(CHUTE_END[0] - CHUTE_START[0], CHUTE_END[1] - CHUTE_START[1]);
+const CHUTE_NEAR = [
+  ((CHUTE_END[1] - CHUTE_START[1]) / CHUTE_LEN) * 0.34,
+  (-(CHUTE_END[0] - CHUTE_START[0]) / CHUTE_LEN) * 0.34,
+] as const;
+const CHUTE_FAR = [-CHUTE_NEAR[0], -CHUTE_NEAR[1]] as const;
+const CHUTE_FLOOR = flat([
+  [CHUTE_START[0] + CHUTE_FAR[0], CHUTE_START[1] + CHUTE_FAR[1], CHUTE_START[2]],
+  [CHUTE_END[0] + CHUTE_FAR[0], CHUTE_END[1] + CHUTE_FAR[1], CHUTE_END[2]],
+  [CHUTE_END[0] + CHUTE_NEAR[0], CHUTE_END[1] + CHUTE_NEAR[1], CHUTE_END[2]],
+  [CHUTE_START[0] + CHUTE_NEAR[0], CHUTE_START[1] + CHUTE_NEAR[1], CHUTE_START[2]],
+]);
+const chuteWall = (offset: readonly [number, number]) =>
+  flat([
+    [CHUTE_START[0] + offset[0], CHUTE_START[1] + offset[1], CHUTE_START[2]],
+    [CHUTE_END[0] + offset[0], CHUTE_END[1] + offset[1], CHUTE_END[2]],
+    [CHUTE_END[0] + offset[0], CHUTE_END[1] + offset[1], CHUTE_END[2] + 0.15],
+    [CHUTE_START[0] + offset[0], CHUTE_START[1] + offset[1], CHUTE_START[2] + 0.15],
+  ]);
+
+const BALLOT_REST = { x0: -2.65, x1: -2.05, y0: 1.95, y1: 2.65, y: 2.3, z: 1.56 };
+const BALLOT_CLIP = flat([
+  [-3.1, 1.52, 1.81],
+  [-1.6, 1.42, BALLOT_REST.z],
+  [-1.6, 3.4, BALLOT_REST.z],
+  [-3.1, 3.4, BALLOT_REST.z],
 ]);
 
-const WHEEL = disc(STAKE.wheel.x, STAKE.wheel.y, STAKE.wheel.z, STAKE.wheel.r);
-const WHEEL_CENTRE = screen([STAKE.wheel.x, STAKE.wheel.y, STAKE.wheel.z]);
-const CUP = screen(STAKE.coinCup);
-/** The chute's rails sit either side of its diagonal, on the near and far side. */
-const CHUTE_NEAR = [0.401, 0.376] as const;
-const CHUTE_FAR = [-0.401, -0.376] as const;
+const PLATE_TOP = disc(0, 0, 1.52, 0.95);
+const PLATE_BOTTOM = disc(0, 0, 1.42, 0.95);
 
-const chuteFloor = flat([
-  [
-    STAKE.coinStart[0] + CHUTE_NEAR[0],
-    STAKE.coinStart[1] + CHUTE_NEAR[1],
-    STAKE.coinStart[2] - 0.06,
-  ],
-  [STAKE.coinStart[0] + CHUTE_FAR[0], STAKE.coinStart[1] + CHUTE_FAR[1], STAKE.coinStart[2] - 0.06],
-  [
-    STAKE.coinRampEnd[0] + CHUTE_FAR[0],
-    STAKE.coinRampEnd[1] + CHUTE_FAR[1],
-    STAKE.coinRampEnd[2] - 0.06,
-  ],
-  [
-    STAKE.coinRampEnd[0] + CHUTE_NEAR[0],
-    STAKE.coinRampEnd[1] + CHUTE_NEAR[1],
-    STAKE.coinRampEnd[2] - 0.06,
-  ],
-]);
+/** A coin-operated gate: say what you like, the gate only moves for money. */
+export function TurnstileArt() {
+  const rest = turnstilePose(0);
+  const restBallot = shift([0, rest.ballot[1] - BALLOT_REST.y, rest.ballot[2] - BALLOT_REST.z]);
 
-const railTop = (offset: readonly [number, number]) => {
-  const a = screen([
-    STAKE.coinStart[0] + offset[0],
-    STAKE.coinStart[1] + offset[1],
-    STAKE.coinStart[2] + 0.12,
-  ]);
-  const b = screen([
-    STAKE.coinRampEnd[0] + offset[0],
-    STAKE.coinRampEnd[1] + offset[1],
-    STAKE.coinRampEnd[2] + 0.12,
-  ]);
-  return { a, b };
-};
-const farRailTop = railTop(CHUTE_FAR);
-const nearRailTop = railTop(CHUTE_NEAR);
-
-/** A stake is real money pressed onto the claim, not a raised hand. */
-export function StakeArt() {
-  const rest = stakePose(0);
-
-  const loop = usePlateLoop(WHY_LOOP, STAKE_STILL, (root) => {
-    const paper = root.querySelector<SVGGElement>("[data-stake-paper]");
-    const mark = root.querySelector<SVGGElement>("[data-stake-mark]");
-    const coin = root.querySelector<SVGGElement>("[data-stake-coin]");
-    const ram = root.querySelector<SVGGElement>("[data-stake-ram]");
-    const lamp = root.querySelector<SVGPolygonElement>("[data-stake-lamp]");
-    const flash = root.querySelector<SVGEllipseElement>("[data-stake-flash]");
-    const spokes = [...root.querySelectorAll<SVGLineElement>("[data-stake-spoke]")];
-    const crank = root.querySelector<SVGLineElement>("[data-stake-crank]");
-    const knob = root.querySelector<SVGCircleElement>("[data-stake-knob]");
-    if (!paper || !mark || !coin || !ram || !lamp || !flash || !crank || !knob) {
+  const loop = usePlateLoop(WHY_LOOP, TURNSTILE_STILL, (root) => {
+    const arms = [...root.querySelectorAll<SVGGElement>("[data-turn-arm]")];
+    const buckets = [...root.querySelectorAll<SVGGElement>("[data-turn-bucket]")];
+    const ticks = [...root.querySelectorAll<SVGLineElement>("[data-turn-tick]")];
+    const coin = root.querySelector<SVGGElement>("[data-turn-coin]");
+    const ballot = root.querySelector<SVGGElement>("[data-turn-ballot]");
+    const lamp = root.querySelector<SVGPolygonElement>("[data-turn-lamp]");
+    const pawl = root.querySelector<SVGGElement>("[data-turn-pawl]");
+    if (
+      arms.length !== 4 ||
+      buckets.length !== 4 ||
+      ticks.length !== 12 ||
+      !coin ||
+      !ballot ||
+      !lamp ||
+      !pawl
+    ) {
       return () => {};
     }
 
     return (phase) => {
-      const pose = stakePose(phase);
-      const feed = shift([-pose.feed * STAKE.paperFeed, 0, 0]);
-      paper.setAttribute("transform", `translate(${n(feed[0])} ${n(feed[1])})`);
-      mark.setAttribute("opacity", n(pose.markOpacity));
+      const pose = turnstilePose(phase);
 
-      const at = screen(pose.coin);
-      coin.setAttribute("transform", `translate(${n(at[0] - CUP[0])} ${n(at[1] - CUP[1])})`);
-      coin.setAttribute("opacity", n(pose.coinOpacity));
-
-      ram.setAttribute("transform", `translate(0 ${n(pose.ram * STAKE.pressTravel * 10)})`);
-      lamp.setAttribute("opacity", n(pose.armed));
-      flash.setAttribute("opacity", n(pose.flash * 0.75));
-
-      spokes.forEach((spoke, index) => {
-        const angle = pose.wheel + (Math.PI / 2) * index;
-        const at = screen([
-          STAKE.wheel.x + Math.cos(angle) * STAKE.wheel.r,
-          STAKE.wheel.y + Math.sin(angle) * STAKE.wheel.r,
-          STAKE.wheel.z,
-        ]);
-        spoke.setAttribute("x2", n(at[0]));
-        spoke.setAttribute("y2", n(at[1]));
+      arms.forEach((group, index) => {
+        const faces = armFaces(pose.angle + (index * Math.PI) / 2);
+        const parts = group.querySelectorAll<SVGPolygonElement>("polygon");
+        const values = [faces.sideA, faces.sideB, faces.end, faces.top];
+        parts.forEach((part, partIndex) => {
+          const points = values[partIndex];
+          if (points) part.setAttribute("points", points);
+        });
       });
 
-      const crankAngle = pose.wheel + Math.PI / 4;
-      const rim = screen([
-        STAKE.wheel.x + Math.cos(crankAngle) * STAKE.wheel.r,
-        STAKE.wheel.y + Math.sin(crankAngle) * STAKE.wheel.r,
-        STAKE.wheel.z,
-      ]);
-      const end = screen([
-        STAKE.wheel.x + Math.cos(crankAngle) * (STAKE.wheel.r + 0.16),
-        STAKE.wheel.y + Math.sin(crankAngle) * (STAKE.wheel.r + 0.16),
-        STAKE.wheel.z,
-      ]);
-      crank.setAttribute("x1", n(rim[0]));
-      crank.setAttribute("y1", n(rim[1]));
-      crank.setAttribute("x2", n(end[0]));
-      crank.setAttribute("y2", n(end[1]));
-      knob.setAttribute("cx", n(end[0]));
-      knob.setAttribute("cy", n(end[1]));
+      buckets.forEach((group, index) => {
+        const angle = TURNSTILE.bucketStart + pose.angle + (index * Math.PI) / 2;
+        const cx = screen([
+          Math.cos(angle) * TURNSTILE.bucketRadius,
+          Math.sin(angle) * TURNSTILE.bucketRadius,
+          1.55,
+        ])[0];
+        const cy = screen([
+          Math.cos(angle) * TURNSTILE.bucketRadius,
+          Math.sin(angle) * TURNSTILE.bucketRadius,
+          1.55,
+        ])[1];
+        const ellipses = group.querySelectorAll<SVGEllipseElement>("ellipse");
+        ellipses.forEach((ellipse) => {
+          ellipse.setAttribute("cx", n(cx));
+          ellipse.setAttribute("cy", n(cy));
+        });
+      });
+
+      ticks.forEach((tick, index) => {
+        const angle = pose.angle + (index * Math.PI) / 6;
+        const inner = screen([Math.cos(angle) * 0.84, Math.sin(angle) * 0.84, 1.526]);
+        const outer = screen([Math.cos(angle) * 0.93, Math.sin(angle) * 0.93, 1.526]);
+        tick.setAttribute("x1", n(inner[0]));
+        tick.setAttribute("y1", n(inner[1]));
+        tick.setAttribute("x2", n(outer[0]));
+        tick.setAttribute("y2", n(outer[1]));
+      });
+
+      const at = screen(pose.coin);
+      coin.setAttribute(
+        "transform",
+        `translate(${n(at[0] - COIN_REST[0])} ${n(at[1] - COIN_REST[1])})`,
+      );
+      coin.setAttribute("opacity", n(pose.coinOpacity));
+
+      const ballotAt = shift([0, pose.ballot[1] - BALLOT_REST.y, pose.ballot[2] - BALLOT_REST.z]);
+      ballot.setAttribute("transform", `translate(${n(ballotAt[0])} ${n(ballotAt[1])})`);
+      ballot.setAttribute("opacity", n(pose.ballotOpacity));
+
+      lamp.setAttribute("opacity", n(pose.armed));
+      pawl.setAttribute("transform", `translate(0 ${n(pose.pawl * 1.5)})`);
     };
   });
 
@@ -232,361 +284,306 @@ export function StakeArt() {
       focusable="false"
     >
       <defs>
-        <clipPath id="stake-paper-clip">
-          <polygon points={PAPER_CLIP} />
+        <clipPath id="turn-ballot-clip">
+          <polygon points={BALLOT_CLIP} />
         </clipPath>
       </defs>
 
       <Plate />
-      <PlateTrim narrow />
+      <PlateTrim label={false} />
 
-      {/* the platen and its machined top */}
-      <Slab x={-2.55} y={-2.4} z={0.8} w={4.1} d={4.15} h={0.9} />
+      {/* the poll box: a ballot goes in and nothing else happens */}
+      <Slab x={-3} y={1.15} z={0.8} w={1.3} d={1.4} h={0.75} />
       <polygon
-        points={topRect(-2.45, -2.3, 1.45, 1.65, 1.701)}
+        points={topRect(-2.9, 1.25, -1.8, 2.45, 1.551)}
         className="fill-none stroke-foreground/20"
-        strokeWidth={0.8}
-      />
-
-      {/* the paper tape, fed from the right lip under the die to the left */}
-      <g clipPath="url(#stake-paper-clip)">
-        <g data-stake-paper>
-          <Slab x={-3.4} y={STAKE.paper.y0} z={1.71} w={5.7} d={2.1} h={0.06} />
-          {PAPER_HOLES.map(([x, y]) => (
-            <ellipse
-              key={`${x}-${y}`}
-              {...disc(x, y, 1.776, 0.072)}
-              className="fill-foreground/40"
-            />
-          ))}
-          {[STAKE.paper.y0 + 0.05, STAKE.paper.y1 - 0.05].map((y) => (
-            <line
-              key={y}
-              x1={screen([-3.4, y, 1.777])[0]}
-              y1={screen([-3.4, y, 1.777])[1]}
-              x2={screen([2.3, y, 1.777])[0]}
-              y2={screen([2.3, y, 1.777])[1]}
-              className="stroke-foreground/25"
-              strokeWidth={0.8}
-            />
-          ))}
-
-          {/* what the die prints: the claim, struck in signal */}
-          <g data-stake-mark opacity={rest.markOpacity}>
-            {([-1.18, -0.98, -0.8] as const).map((y, index) => (
-              <line
-                key={y}
-                x1={screen([-0.42, y, 1.778])[0]}
-                y1={screen([-0.42, y, 1.778])[1]}
-                x2={screen([index === 0 ? 0.42 : index === 1 ? 0.28 : 0.06, y, 1.778])[0]}
-                y2={screen([index === 0 ? 0.42 : index === 1 ? 0.28 : 0.06, y, 1.778])[1]}
-                className="stroke-foreground/70"
-                strokeWidth={1.1}
-              />
-            ))}
-            <polygon
-              points={topRect(-0.42, -0.72, 0.42, -0.64, 1.779)}
-              className="fill-signal stroke-signal"
-              strokeWidth={0.6}
-            />
-          </g>
-        </g>
-      </g>
-
-      {/* the lips that keep the tape ends behind an edge */}
-      <Slab x={-2.18} y={-1.45} z={1.72} w={0.18} d={2.3} h={0.09} />
-      {(
-        [
-          [-2.09, -1.36],
-          [-2.09, 0.76],
-        ] as const
-      ).map(([x, y]) => (
-        <ellipse key={`${x}-${y}`} {...disc(x, y, 1.815, 0.065)} className="fill-foreground/40" />
-      ))}
-      <polygon points={topRect(1.32, -1.45, 1.39, 0.85, 1.776)} className="fill-foreground/65" />
-
-      {/* the drawer the coin is kept in, set into the platen face */}
-      <polygon
-        points={faceRect(STAKE.drawer.x, STAKE.drawer.z0, STAKE.drawer.w, STAKE.drawer.z1, 1.755)}
-        className="fill-foreground/[0.07] stroke-foreground"
-        strokeWidth={1}
-      />
-      <polygon
-        points={faceRect(
-          STAKE.drawer.x + 0.06,
-          STAKE.drawer.z0 + 0.06,
-          STAKE.drawer.w - 0.06,
-          STAKE.drawer.z1 - 0.06,
-          1.756,
-        )}
-        className="fill-none stroke-foreground/30"
         strokeWidth={0.7}
       />
-      <circle
-        cx={screen([0.72, 1.76, 1.2])[0]}
-        cy={screen([0.72, 1.76, 1.2])[1]}
-        r={2.1}
-        className="fill-background stroke-foreground"
-        strokeWidth={0.9}
-      />
-      <ellipse {...disc(0.72, 1.78, 1.2, 0.05)} className="fill-foreground/40" />
-
-      {/* the cup: a dark hole and its rim */}
-      <ellipse {...disc(STAKE.cup.x, STAKE.cup.y, 1.705, 0.36)} className="fill-foreground/70" />
-      <ellipse
-        {...disc(STAKE.cup.x, STAKE.cup.y, 1.715, 0.5)}
-        className="fill-none stroke-foreground"
-        strokeWidth={1}
-      />
-      <ellipse
-        {...disc(STAKE.cup.x, STAKE.cup.y, 1.72, 0.56)}
-        className="fill-none stroke-foreground/30"
-        strokeWidth={0.6}
-      />
-
-      {/* the press frame */}
-      <Slab x={-2.55} y={-2.35} z={0.8} w={0.9} d={0.9} h={4.3} />
-      <Slab x={-2.68} y={-2.48} z={0.8} w={1.16} d={1.16} h={0.16} />
-      <Slab x={-2.55} y={-2.3} z={5.1} w={3.6} d={1.45} h={0.55} />
-      {(
-        [
-          [-2.36, -2.12],
-          [-2.36, -1.02],
-          [0.82, -2.12],
-          [0.82, -1.02],
-        ] as const
-      ).map(([x, y]) => (
-        <ellipse key={`${x}-${y}`} {...disc(x, y, 5.66, 0.08)} className="fill-foreground/35" />
-      ))}
+      <polygon points={topRect(-2.75, 1.3, -1.95, 1.42, 1.552)} className="fill-foreground/70" />
       <polygon
-        points={faceRect(-2.45, 3.45, -1.75, 3.95, -1.44)}
+        points={faceRect(-2.8, 0.95, -1.9, 1.25, 2.56)}
         className="fill-background stroke-foreground/35"
         strokeWidth={0.8}
       />
-      {[3.85, 3.65].map((z, index) => (
+      {[1.19, 1.04].map((z, index) => (
         <line
           key={z}
-          x1={screen([-2.36, -1.43, z])[0]}
-          y1={screen([-2.36, -1.43, z])[1]}
-          x2={screen([index === 1 ? -2.7 : -2.14, -1.43, z])[0]}
-          y2={screen([index === 1 ? -2.7 : -2.14, -1.43, z])[1]}
+          x1={screen([-2.7, 2.561, z])[0]}
+          y1={screen([-2.7, 2.561, z])[1]}
+          x2={screen([index === 1 ? -2.4 : -2.02, 2.561, z])[0]}
+          y2={screen([index === 1 ? -2.4 : -2.02, 2.561, z])[1]}
           className="stroke-foreground/35"
           strokeWidth={0.7}
         />
       ))}
       {(
         [
-          [-2.42, -2.22],
-          [-1.77, -2.22],
-          [-2.42, -1.58],
-          [-1.77, -1.58],
+          [-2.88, 2.56],
+          [-1.82, 2.56],
         ] as const
       ).map(([x, y]) => (
-        <ellipse key={`${x}-${y}`} {...disc(x, y, 0.965, 0.085)} className="fill-foreground/35" />
+        <ellipse key={`${x}-${y}`} {...disc(x, y, 1.255, 0.06)} className="fill-foreground/30" />
       ))}
 
-      {/* the moving ram: a rod and its die */}
-      <g data-stake-ram>
-        <Slab x={-0.18} y={-1.08} z={2.72} w={0.36} d={0.36} h={1.88} />
-        <Slab x={-0.5} y={-1.3} z={2.27} w={1} d={0.9} h={0.45} />
-        <polygon
-          points={faceRect(-0.42, 2.33, 0.42, 2.64, -0.399)}
-          className="fill-none stroke-foreground/45"
-          strokeWidth={0.7}
-        />
+      {/* the ballot: lands on the box, then slides away under the lip */}
+      <g clipPath="url(#turn-ballot-clip)">
+        <g
+          data-turn-ballot
+          opacity={rest.ballotOpacity}
+          transform={`translate(${n(restBallot[0])} ${n(restBallot[1])})`}
+        >
+          <polygon
+            points={topRect(
+              BALLOT_REST.x0,
+              BALLOT_REST.y0,
+              BALLOT_REST.x1,
+              BALLOT_REST.y1,
+              BALLOT_REST.z,
+            )}
+            className="fill-background stroke-foreground"
+            strokeWidth={0.9}
+          />
+          <line
+            x1={screen([-2.52, 2.47, 1.562])[0]}
+            y1={screen([-2.52, 2.47, 1.562])[1]}
+            x2={screen([-2.16, 2.47, 1.562])[0]}
+            y2={screen([-2.16, 2.47, 1.562])[1]}
+            className="stroke-foreground/40"
+            strokeWidth={0.8}
+          />
+          <polyline
+            points={flat([
+              [-2.5, 2.14, 1.562],
+              [-2.39, 2.26, 1.562],
+              [-2.18, 2.02, 1.562],
+            ])}
+            className="fill-none stroke-foreground"
+            strokeWidth={1.4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <line
+            x1={screen([-2.52, 2.32, 1.562])[0]}
+            y1={screen([-2.52, 2.32, 1.562])[1]}
+            x2={screen([-2.3, 2.32, 1.562])[0]}
+            y2={screen([-2.3, 2.32, 1.562])[1]}
+            className="stroke-foreground/30"
+            strokeWidth={0.7}
+          />
+        </g>
       </g>
+      <Slab x={-2.85} y={1.42} z={1.565} w={1} d={0.1} h={0.085} />
 
-      {/* the fixed guide the rod passes through */}
-      <Slab x={-0.45} y={-1.35} z={4.6} w={0.9} d={0.9} h={0.5} />
-      <Slab x={-0.58} y={-1.48} z={4.52} w={1.16} d={1.16} h={0.1} />
+      {/* the base, the rotor shaft and the vault */}
+      <Slab x={-1.15} y={-1.15} z={0.8} w={2.3} d={2.3} h={0.52} />
+      <Slab x={-1.05} y={-1.05} z={1.32} w={2.1} d={2.1} h={0.06} />
       {(
         [
-          [-0.5, -1.4],
-          [0.5, -1.4],
-          [-0.5, -0.4],
-          [0.5, -0.4],
+          [-0.94, -0.94],
+          [0.94, -0.94],
+          [-0.94, 0.94],
+          [0.94, 0.94],
         ] as const
       ).map(([x, y]) => (
-        <ellipse key={`${x}-${y}`} {...disc(x, y, 4.63, 0.07)} className="fill-foreground/40" />
+        <ellipse key={`${x}-${y}`} {...disc(x, y, 1.385, 0.07)} className="fill-foreground/35" />
       ))}
-
-      {/* the tell-tale: lit while the coin arms the press */}
       <polygon
-        points={faceRect(0.46, 5.18, 0.78, 5.5, -0.84)}
-        className="fill-background stroke-foreground"
+        points={faceRect(-0.55, 0.85, 0.55, 1.2, 1.156)}
+        className="fill-foreground/[0.06] stroke-foreground"
         strokeWidth={0.9}
       />
       <polygon
-        data-stake-lamp
-        points={faceRect(0.51, 5.23, 0.73, 5.45, -0.835)}
+        points={faceRect(-0.49, 0.89, 0.49, 1.16, 1.157)}
+        className="fill-none stroke-foreground/30"
+        strokeWidth={0.7}
+      />
+      <line
+        x1={screen([-0.55, 1.157, 0.85])[0]}
+        y1={screen([-0.55, 1.157, 0.85])[1]}
+        x2={screen([-0.55, 1.157, 1.2])[0]}
+        y2={screen([-0.55, 1.157, 1.2])[1]}
+        className="stroke-foreground/60"
+        strokeWidth={0.8}
+      />
+      <polygon points={faceRect(0.3, 0.98, 0.46, 1.1, 1.158)} className="fill-foreground" />
+      <polyline
+        points={flat([
+          [0.32, 1.158, 1.1],
+          [0.32, 1.158, 1.15],
+          [0.44, 1.158, 1.15],
+          [0.44, 1.158, 1.1],
+        ])}
+        className="fill-none stroke-foreground"
+        strokeWidth={1.1}
+      />
+      <circle
+        cx={screen([0.38, 1.159, 1.04])[0]}
+        cy={screen([0.38, 1.159, 1.04])[1]}
+        r={1.2}
+        className="fill-background stroke-foreground"
+        strokeWidth={0.7}
+      />
+
+      <Slab x={-0.14} y={-0.14} z={1.38} w={0.28} d={0.28} h={0.76} />
+      <Slab x={-0.2} y={-0.2} z={1.38} w={0.4} d={0.4} h={0.12} />
+
+      {/* the rotor plate */}
+      <ellipse
+        {...PLATE_BOTTOM}
+        className="fill-foreground/20 stroke-foreground/40"
+        strokeWidth={0.7}
+      />
+      <rect
+        x={PLATE_TOP.cx - PLATE_TOP.rx}
+        y={PLATE_TOP.cy}
+        width={PLATE_TOP.rx * 2}
+        height={1}
+        className="fill-foreground/15"
+      />
+      <ellipse {...PLATE_TOP} className="fill-background stroke-foreground" strokeWidth={1} />
+      {TICKS.map((angle, index) => {
+        const inner = screen([Math.cos(angle) * 0.84, Math.sin(angle) * 0.84, 1.526]);
+        const outer = screen([Math.cos(angle) * 0.93, Math.sin(angle) * 0.93, 1.526]);
+        return (
+          <line
+            key={index}
+            data-turn-tick
+            x1={inner[0]}
+            y1={inner[1]}
+            x2={outer[0]}
+            y2={outer[1]}
+            className="stroke-foreground/30"
+            strokeWidth={0.7}
+          />
+        );
+      })}
+
+      {/* four buckets: the coin's weight turns the gate */}
+      {BUCKET_CENTRES.map(([x, y], index) => (
+        <g key={index} data-turn-bucket>
+          <ellipse {...disc(x, y, 1.525, 0.22)} className="fill-foreground/70" />
+          <ellipse
+            {...disc(x, y, 1.55, 0.3)}
+            className="fill-none stroke-foreground"
+            strokeWidth={0.9}
+          />
+          <ellipse
+            {...disc(x, y, 1.56, 0.33)}
+            className="fill-none stroke-foreground/25"
+            strokeWidth={0.6}
+          />
+        </g>
+      ))}
+
+      {/* the coin post and its chute to the front bucket */}
+      <Slab x={2.15} y={0.1} z={0.8} w={0.3} d={0.3} h={1.3} />
+      <Slab x={2.3} y={0.4} z={1.9} w={0.3} d={0.22} h={0.09} />
+      <polygon
+        points={faceRect(2.19, 1.5, 2.41, 1.68, 0.401)}
+        className="fill-background stroke-foreground"
+        strokeWidth={0.8}
+      />
+      <polygon
+        data-turn-lamp
+        points={faceRect(2.23, 1.55, 2.37, 1.64, 0.402)}
         opacity={rest.armed}
         className="fill-signal"
       />
 
-      {/* the coin chute and its magazine */}
-      <Slab x={2.85} y={-0.7} z={0.8} w={0.3} d={0.3} h={2.04} />
-      <Slab x={2.72} y={-0.83} z={0.8} w={0.56} d={0.56} h={0.12} />
-      {(
-        [
-          [2.77, -0.63],
-          [3.23, -0.63],
-          [2.77, -0.37],
-          [3.23, -0.37],
-        ] as const
-      ).map(([x, y]) => (
-        <ellipse key={`${x}-${y}`} {...disc(x, y, 0.925, 0.075)} className="fill-foreground/35" />
-      ))}
-      <Slab x={2.9} y={-0.65} z={2.84} w={0.2} d={0.3} h={0.12} />
-      <Slab x={2.85} y={-0.75} z={2.96} w={0.3} d={0.4} h={0.48} />
-      <Slab x={2.8} y={-0.8} z={3.44} w={0.4} d={0.5} h={0.1} />
-      <polygon points={faceRect(2.9, 3.06, 3.1, 3.36, -0.349)} className="fill-foreground/60" />
-      <polygon points={chuteFloor} className="fill-foreground/[0.06]" />
-      <line
-        x1={
-          screen([
-            STAKE.coinRampEnd[0] + CHUTE_NEAR[0],
-            STAKE.coinRampEnd[1] + CHUTE_NEAR[1],
-            STAKE.coinRampEnd[2] - 0.06,
-          ])[0]
-        }
-        y1={
-          screen([
-            STAKE.coinRampEnd[0] + CHUTE_NEAR[0],
-            STAKE.coinRampEnd[1] + CHUTE_NEAR[1],
-            STAKE.coinRampEnd[2] - 0.06,
-          ])[1]
-        }
-        x2={
-          screen([
-            STAKE.coinRampEnd[0] + CHUTE_FAR[0],
-            STAKE.coinRampEnd[1] + CHUTE_FAR[1],
-            STAKE.coinRampEnd[2] - 0.06,
-          ])[0]
-        }
-        y2={
-          screen([
-            STAKE.coinRampEnd[0] + CHUTE_FAR[0],
-            STAKE.coinRampEnd[1] + CHUTE_FAR[1],
-            STAKE.coinRampEnd[2] - 0.06,
-          ])[1]
-        }
-        className="stroke-foreground"
-        strokeWidth={1.1}
+      <polygon points={CHUTE_FLOOR} className="fill-foreground/[0.1]" />
+      <polygon
+        points={chuteWall(CHUTE_FAR)}
+        className="fill-foreground/[0.14] stroke-foreground"
+        strokeWidth={0.8}
+        strokeLinejoin="round"
       />
       <line
-        x1={farRailTop.a[0]}
-        y1={farRailTop.a[1]}
-        x2={farRailTop.b[0]}
-        y2={farRailTop.b[1]}
+        x1={screen([CHUTE_END[0] + CHUTE_NEAR[0], CHUTE_END[1] + CHUTE_NEAR[1], CHUTE_END[2]])[0]}
+        y1={screen([CHUTE_END[0] + CHUTE_NEAR[0], CHUTE_END[1] + CHUTE_NEAR[1], CHUTE_END[2]])[1]}
+        x2={screen([CHUTE_END[0] + CHUTE_FAR[0], CHUTE_END[1] + CHUTE_FAR[1], CHUTE_END[2]])[0]}
+        y2={screen([CHUTE_END[0] + CHUTE_FAR[0], CHUTE_END[1] + CHUTE_FAR[1], CHUTE_END[2]])[1]}
         className="stroke-foreground"
-        strokeWidth={1.6}
-        strokeLinecap="round"
+        strokeWidth={1}
       />
 
-      {/* the coin rides between the rails, then seats in the cup */}
-      <g data-stake-coin opacity={rest.coinOpacity}>
+      {/* the coin, in the chute or in its bucket */}
+      <g data-turn-coin opacity={rest.coinOpacity}>
         <Coin
-          x={STAKE.coinCup[0]}
-          y={STAKE.coinCup[1]}
-          z={STAKE.coinCup[2]}
-          r={STAKE.coinRadius}
-          thickness={1.2}
+          x={BUCKET_CENTRES[0][0]}
+          y={BUCKET_CENTRES[0][1]}
+          z={TURNSTILE.coinCupZ}
+          r={TURNSTILE.coinRadius}
+          thickness={1.1}
           signal
         />
       </g>
-
-      <line
-        x1={nearRailTop.a[0]}
-        y1={nearRailTop.a[1]}
-        x2={nearRailTop.b[0]}
-        y2={nearRailTop.b[1]}
-        className="stroke-foreground"
-        strokeWidth={1.6}
-        strokeLinecap="round"
+      <polygon
+        points={chuteWall(CHUTE_NEAR)}
+        className="fill-foreground/[0.08] stroke-foreground"
+        strokeWidth={0.8}
+        strokeLinejoin="round"
       />
 
-      {/* the strike flash at the die */}
-      <ellipse
-        data-stake-flash
-        {...disc(STAKE.die.x, STAKE.die.y, 1.79, 0.55)}
-        opacity={0}
-        className="fill-none stroke-signal"
-        strokeWidth={1.2}
-      />
+      {/* the pawl that holds each quarter turn */}
+      <g data-turn-pawl>
+        <line
+          x1={screen([1.08, 0.52, 1.3])[0]}
+          y1={screen([1.08, 0.52, 1.3])[1]}
+          x2={screen([0.92, 0.42, 1.49])[0]}
+          y2={screen([0.92, 0.42, 1.49])[1]}
+          className="stroke-foreground"
+          strokeWidth={1.4}
+          strokeLinecap="round"
+        />
+        <circle
+          cx={screen([0.92, 0.42, 1.49])[0]}
+          cy={screen([0.92, 0.42, 1.49])[1]}
+          r={1.4}
+          className="fill-background stroke-foreground"
+          strokeWidth={0.8}
+        />
+        <circle
+          cx={screen([1.08, 0.52, 1.3])[0]}
+          cy={screen([1.08, 0.52, 1.3])[1]}
+          r={1.2}
+          className="fill-foreground/40"
+        />
+      </g>
 
-      {/* the hand wheel on the screw */}
-      <line
-        x1={screen([STAKE.wheel.x, STAKE.wheel.y, 5.65])[0]}
-        y1={screen([STAKE.wheel.x, STAKE.wheel.y, 5.65])[1]}
-        x2={WHEEL_CENTRE[0]}
-        y2={WHEEL_CENTRE[1]}
-        className="stroke-foreground"
-        strokeWidth={1.4}
-      />
-      <ellipse
-        cx={WHEEL.cx}
-        cy={WHEEL.cy}
-        rx={WHEEL.rx}
-        ry={WHEEL.ry}
-        className="fill-none stroke-foreground"
-        strokeWidth={1.6}
-      />
-      {[0, 1, 2, 3].map((index) => {
-        const angle = rest.wheel + (Math.PI / 2) * index;
-        const end = screen([
-          STAKE.wheel.x + Math.cos(angle) * STAKE.wheel.r,
-          STAKE.wheel.y + Math.sin(angle) * STAKE.wheel.r,
-          STAKE.wheel.z,
-        ]);
-        return (
-          <line
-            key={index}
-            data-stake-spoke
-            x1={WHEEL_CENTRE[0]}
-            y1={WHEEL_CENTRE[1]}
-            x2={end[0]}
-            y2={end[1]}
-            className="stroke-foreground"
-            strokeWidth={1}
+      {/* the four-arm gate */}
+      {ARM_REST.map((faces, index) => (
+        <g key={index} data-turn-arm>
+          <polygon
+            points={faces.sideA}
+            className="fill-foreground/[0.07] stroke-foreground"
+            strokeWidth={0.8}
+            strokeLinejoin="round"
           />
-        );
-      })}
-      <ellipse cx={WHEEL.cx} cy={WHEEL.cy} rx={2.2} ry={1.3} className="fill-foreground" />
-      {(() => {
-        const angle = rest.wheel + Math.PI / 4;
-        const rim = screen([
-          STAKE.wheel.x + Math.cos(angle) * STAKE.wheel.r,
-          STAKE.wheel.y + Math.sin(angle) * STAKE.wheel.r,
-          STAKE.wheel.z,
-        ]);
-        const end = screen([
-          STAKE.wheel.x + Math.cos(angle) * (STAKE.wheel.r + 0.16),
-          STAKE.wheel.y + Math.sin(angle) * (STAKE.wheel.r + 0.16),
-          STAKE.wheel.z,
-        ]);
-        return (
-          <>
-            <line
-              data-stake-crank
-              x1={rim[0]}
-              y1={rim[1]}
-              x2={end[0]}
-              y2={end[1]}
-              className="stroke-foreground"
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-            <circle
-              data-stake-knob
-              cx={end[0]}
-              cy={end[1]}
-              r={2.8}
-              className="fill-background stroke-foreground"
-              strokeWidth={1.1}
-            />
-          </>
-        );
-      })()}
+          <polygon
+            points={faces.sideB}
+            className="fill-foreground/[0.15] stroke-foreground"
+            strokeWidth={0.8}
+            strokeLinejoin="round"
+          />
+          <polygon
+            points={faces.end}
+            className="fill-foreground/[0.1] stroke-foreground"
+            strokeWidth={0.8}
+            strokeLinejoin="round"
+          />
+          <polygon
+            points={faces.top}
+            className="fill-background stroke-foreground"
+            strokeWidth={0.8}
+            strokeLinejoin="round"
+          />
+        </g>
+      ))}
+
+      {/* the hub at the top of the shaft */}
+      <Slab x={-0.32} y={-0.32} z={2.14} w={0.64} d={0.64} h={0.22} />
+      <Slab x={-0.38} y={-0.38} z={2.36} w={0.76} d={0.76} h={0.06} />
+      <ellipse {...disc(0, 0, 2.425, 0.12)} className="fill-foreground/35" />
     </svg>
   );
 }

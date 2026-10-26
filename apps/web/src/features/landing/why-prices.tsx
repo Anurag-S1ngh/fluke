@@ -2,13 +2,13 @@ import type * as React from "react";
 
 import { SectionMark } from "@/components/ui/section-mark";
 
-import { NoticeArt, NumberArt, StakeArt } from "./why-art";
+import { NoticeArt, NumberArt, TurnstileArt } from "./why-art";
 
 const features: { title: string; body: string; art: React.ReactNode }[] = [
   {
     title: "Skin in the game",
     body: "Polls record what people say. Prices record what they will back with money — a harder signal to fake.",
-    art: <StakeArt />,
+    art: <TurnstileArt />,
   },
   {
     title: "One number",
