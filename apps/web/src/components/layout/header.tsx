@@ -25,7 +25,20 @@ export default function Header() {
   const authHref = (base: "/signin" | "/signup") =>
     (redirect ? `${base}?next=${encodeURIComponent(redirect)}` : base) as Route;
   const isHome = pathname === "/";
+  const headerRef = React.useRef<HTMLElement>(null);
   const [pastHero, setPastHero] = React.useState(false);
+
+  React.useEffect(() => {
+    const node = headerRef.current;
+    if (!node) return;
+    const applyHeight = () => {
+      document.documentElement.style.setProperty("--header-h", `${node.offsetHeight}px`);
+    };
+    applyHeight();
+    const observer = new ResizeObserver(applyHeight);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   React.useEffect(() => {
     if (!isHome) return;
@@ -33,7 +46,8 @@ export default function Header() {
     if (!main) return;
     const onScroll = () => {
       const hero = main.querySelector("section");
-      const threshold = hero ? (hero as HTMLElement).offsetHeight - 96 : window.innerHeight - 96;
+      const headerHeight = headerRef.current?.offsetHeight ?? 96;
+      const threshold = hero ? hero.offsetHeight - headerHeight : window.innerHeight - headerHeight;
       setPastHero(main.scrollTop > threshold);
     };
     onScroll();
@@ -45,7 +59,9 @@ export default function Header() {
 
   return (
     <header
+      ref={headerRef}
       className={cn(
+        "transition-[background-color,border-color,color] duration-200",
         overlay
           ? "absolute inset-x-0 top-0 z-50 bg-transparent text-white"
           : isHome
@@ -58,7 +74,10 @@ export default function Header() {
           fluke<span className={overlay ? "text-white/70" : "text-signal"}>.</span>
         </Link>
 
-        <nav className="flex items-center gap-10 font-sans text-sm font-medium tracking-[0.06em] capitalize">
+        <nav
+          aria-label="Primary"
+          className="flex items-center gap-8 font-sans text-sm font-medium tracking-[0.06em] capitalize sm:gap-10"
+        >
           {links.map(({ href, label }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
@@ -67,8 +86,10 @@ export default function Header() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "underline-offset-4 transition-colors",
-                  overlay ? "hover:text-white hover:underline" : "hover:text-signal",
+                  "-my-2 inline-flex items-center py-2 underline-offset-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4",
+                  overlay
+                    ? "hover:text-white hover:underline focus-visible:outline-white"
+                    : "hover:text-signal focus-visible:outline-foreground",
                   active &&
                     (overlay
                       ? "text-white underline decoration-1"
@@ -81,7 +102,12 @@ export default function Header() {
           })}
         </nav>
 
-        <div className="flex w-full items-center justify-end gap-6 font-sans text-sm font-medium tracking-[0.06em] sm:w-auto sm:justify-start">
+        <div
+          className={cn(
+            "flex w-full items-center justify-end gap-5 border-t pt-3 font-sans text-sm font-medium tracking-[0.06em] sm:w-auto sm:justify-start sm:gap-6 sm:border-0 sm:pt-0",
+            overlay ? "border-white/25" : "border-foreground/20",
+          )}
+        >
           {loading ? (
             <span className={overlay ? "text-white/70" : "text-muted-foreground"}>···</span>
           ) : user ? (
@@ -107,8 +133,10 @@ export default function Header() {
                 type="button"
                 onClick={() => void signOut()}
                 className={cn(
-                  "underline-offset-4 transition-colors",
-                  overlay ? "hover:text-white hover:underline" : "underline hover:text-signal",
+                  "-my-2 inline-flex items-center py-2 underline-offset-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4",
+                  overlay
+                    ? "hover:text-white hover:underline focus-visible:outline-white"
+                    : "underline hover:text-signal focus-visible:outline-foreground",
                 )}
               >
                 Sign out
@@ -119,8 +147,10 @@ export default function Header() {
               <Link
                 href={authHref("/signin")}
                 className={cn(
-                  "underline-offset-4 transition-colors",
-                  overlay ? "hover:text-white hover:underline" : "underline hover:text-signal",
+                  "-my-2 inline-flex items-center py-2 underline-offset-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4",
+                  overlay
+                    ? "hover:text-white hover:underline focus-visible:outline-white"
+                    : "underline hover:text-signal focus-visible:outline-foreground",
                 )}
               >
                 Sign in
@@ -128,10 +158,10 @@ export default function Header() {
               <Link
                 href={authHref("/signup")}
                 className={cn(
-                  "border px-2 py-1 transition-colors",
+                  "inline-flex items-center border px-2 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4",
                   overlay
-                    ? "border-white hover:bg-white hover:text-[#2036ff]"
-                    : "border-foreground hover:bg-foreground hover:text-background",
+                    ? "border-white hover:bg-white hover:text-[#2036ff] focus-visible:outline-white"
+                    : "border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
                 )}
               >
                 Join

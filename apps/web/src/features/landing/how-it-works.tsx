@@ -21,7 +21,7 @@ function StepCard({ title, body, art }: { title: string; body: string; art: Reac
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="scroll-mt-24 border-b-2 border-foreground">
+    <section id="how-it-works" className="scroll-mt-[var(--header-h)] border-b-2 border-foreground">
       <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
         <div className="flex flex-col items-center gap-4 text-center">
           <SectionMark n="01">How it works</SectionMark>

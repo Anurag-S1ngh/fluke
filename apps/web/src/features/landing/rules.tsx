@@ -11,7 +11,7 @@ const terms = [
 
 export function Rules() {
   return (
-    <section id="the-rules" className="scroll-mt-24 border-b-2 border-foreground">
+    <section id="the-rules" className="scroll-mt-[var(--header-h)] border-b-2 border-foreground">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-28 sm:py-36 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
         <div>
           <SectionMark n="04">The rules</SectionMark>

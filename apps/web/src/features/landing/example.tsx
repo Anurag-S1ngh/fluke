@@ -7,7 +7,7 @@ import { SectionMark } from "@/components/ui/section-mark";
 
 export function Example() {
   return (
-    <section id="example" className="scroll-mt-24 border-b-2 border-foreground">
+    <section id="example" className="scroll-mt-[var(--header-h)] border-b-2 border-foreground">
       <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
         <div className="flex flex-col items-center gap-4 text-center">
           <SectionMark n="02">An example</SectionMark>
