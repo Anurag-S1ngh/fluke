@@ -46,7 +46,6 @@ export function BeamArt() {
   const rightEnd: Point = [2.3, -2.3, 3.85];
   const [lx, ly] = screen(leftEnd);
   const [rx, ry] = screen(rightEnd);
-  const [px, py] = screen([0, 0, 4.4]);
   const leftPan = disc(-2.3, 2.3, 3.3, 1.12);
   const rightPan = disc(2.3, -2.3, 2.3, 1.12);
 
