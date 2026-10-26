@@ -246,7 +246,13 @@ export function payoutPose(t: number): PayoutPose {
   }
   if (t < 0.5) {
     const flown = span(t, 0.1, 0.5);
-    return { coin: arc(flown), opacity: 1, trail: flown, trailOpacity: 1 };
+    return {
+      coin: arc(flown),
+      // it is at the mouth for a beat; show it once it is clear of the face
+      opacity: smooth(span(flown, 0.04, 0.2)),
+      trail: flown,
+      trailOpacity: 1,
+    };
   }
   return { coin: arc(1), opacity: 1, trail: 1, trailOpacity: 1 };
 }

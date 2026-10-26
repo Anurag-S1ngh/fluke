@@ -8,6 +8,12 @@ import {
   BEAM_LOOP,
   beamPose,
   PAN_REF_Z,
+  PAYOUT_LAND,
+  PAYOUT_LOOP,
+  PAYOUT_REST,
+  PAYOUT_STILL,
+  PAYOUT_TRAIL,
+  payoutPose,
   type BeamSide,
 } from "./steps-motion";
 
@@ -228,11 +234,27 @@ export function BeamArt() {
 }
 
 export function PayoutArt() {
-  const [slotX, slotY] = screen([2.4, -0.8, 1.75]);
-  const [dropX, dropY] = screen([-1.8, 1.4, 2.9]);
+  const rest = payoutPose(0);
+
+  const loop = useStepsLoop(PAYOUT_LOOP, PAYOUT_STILL, (root) => {
+    const share = root.querySelector<SVGGElement>("[data-share]");
+    const trail = root.querySelector<SVGPathElement>("[data-trail]");
+    if (!share || !trail) return () => {};
+
+    return (phase) => {
+      const pose = payoutPose(phase);
+      const dx = pose.coin[0] - PAYOUT_REST[0];
+      const dy = pose.coin[1] - PAYOUT_REST[1];
+      share.setAttribute("transform", `translate(${dx.toFixed(2)} ${dy.toFixed(2)})`);
+      share.setAttribute("opacity", String(pose.opacity));
+      trail.setAttribute("stroke-dasharray", `${pose.trail.toFixed(4)} 1`);
+      trail.setAttribute("opacity", String(pose.trailOpacity));
+    };
+  });
 
   return (
     <svg
+      ref={loop}
       viewBox="0 0 132 120"
       className="w-full"
       role="presentation"
@@ -265,19 +287,35 @@ export function PayoutArt() {
 
       {/* the tray that catches it */}
       <Slab x={-3.4} y={0.2} z={0.8} w={2.4} d={2.4} h={0.55} />
-      <Coin x={-2.3} y={1.3} z={1.38} />
-      <Coin x={-2.3} y={1.3} z={1.68} />
 
-      {/* the share on its way down */}
+      {/* the share's route: the part flown, then the rest of the arc */}
       <path
-        d={`M${slotX} ${slotY} Q${slotX - 22} ${slotY + 14} ${dropX + 5} ${dropY - 3}`}
+        d={PAYOUT_TRAIL}
         fill="none"
-        className="stroke-signal/60"
+        className="stroke-foreground/25"
         strokeWidth={1}
         strokeDasharray="2 3"
         strokeLinecap="round"
       />
-      <Coin x={-1.9} y={1.4} z={3.05} signal />
+      <path
+        data-trail
+        d={PAYOUT_TRAIL}
+        fill="none"
+        pathLength={1}
+        strokeDasharray={`${rest.trail} 1`}
+        opacity={rest.trailOpacity}
+        className="stroke-signal/60"
+        strokeWidth={1}
+        strokeLinecap="round"
+      />
+
+      <Coin x={-2.3} y={1.3} z={1.38} />
+      <Coin x={-2.3} y={1.3} z={1.68} />
+
+      {/* the share on its way down */}
+      <g data-share opacity={rest.opacity}>
+        <Coin x={PAYOUT_LAND[0]} y={PAYOUT_LAND[1]} z={PAYOUT_LAND[2]} signal />
+      </g>
     </svg>
   );
 }
