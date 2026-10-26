@@ -1,6 +1,6 @@
 "use client";
 
-import { Coin, disc, flat, Plate, screen, Slab, type Point } from "./mini-iso";
+import { Coin, disc, flat, Plate, screen, Slab } from "./mini-iso";
 import { useStepsLoop } from "./steps-loop";
 import {
   BALLOT_LOOP,
