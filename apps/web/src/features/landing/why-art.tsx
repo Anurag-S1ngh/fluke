@@ -4,7 +4,16 @@ import type * as React from "react";
 
 import { Coin, disc, flat, ISO_VIEWBOX, Plate, screen, Slab, type Point } from "./mini-iso";
 import { usePlateLoop } from "./plate-loop";
-import { STAKE, STAKE_STILL, stakePose, WHY_LOOP } from "./why-motion";
+import {
+  COUNTER,
+  COUNTER_STILL,
+  counterCamRadius,
+  counterPose,
+  STAKE,
+  STAKE_STILL,
+  stakePose,
+  WHY_LOOP,
+} from "./why-motion";
 
 /** Screen offset of a world move: the plate draws 10 px to the unit. */
 const shift = ([dx, dy, dz]: Point): [number, number] => [
@@ -28,6 +37,15 @@ const topRect = (x0: number, y0: number, x1: number, y1: number, z: number) =>
     [x1, y0, z],
     [x1, y1, z],
     [x0, y1, z],
+  ]);
+
+/** A rectangle standing in a side face at a fixed x. */
+const sideRect = (y0: number, z0: number, y1: number, z1: number, x: number) =>
+  flat([
+    [x, y0, z0],
+    [x, y1, z0],
+    [x, y1, z1],
+    [x, y0, z1],
   ]);
 
 const n = (value: number) => (Math.round(value * 100) / 100).toString();
@@ -582,136 +600,380 @@ export function StakeArt() {
   );
 }
 
+/* --------------------------------------------------------- 02 · one number */
+
+const SEGMENTS: Record<string, [number, number, number, number]> = {
+  a: [0.1, 1, 0.9, 1],
+  b: [0.9, 1, 0.9, 0.52],
+  c: [0.9, 0.48, 0.9, 0],
+  d: [0.1, 0, 0.9, 0],
+  e: [0.1, 0, 0.1, 0.48],
+  f: [0.1, 0.52, 0.1, 1],
+  g: [0.1, 0.5, 0.9, 0.5],
+};
+
+const DIGIT_SEGMENTS: Record<string, string> = {
+  "0": "abcdef",
+  "1": "bc",
+  "2": "abged",
+  "3": "abgcd",
+  "4": "fgbc",
+  "5": "afgcd",
+  "6": "afgecd",
+  "7": "abc",
+  "8": "abcdefg",
+  "9": "abcdfg",
+};
+
+/** One drum digit, drawn as seven strokes in the cabinet's face plane. */
+function Digit({ value, x, z }: { value: string; x: number; z: number }) {
+  const { width, height } = COUNTER.digit;
+  const x0 = x - width / 2;
+  const z0 = z - height / 2;
+  return (
+    <g className="stroke-background" strokeWidth={1.4} strokeLinecap="round">
+      {[...DIGIT_SEGMENTS[value]].map((key) => {
+        const [u0, v0, u1, v1] = SEGMENTS[key];
+        const a = screen([x0 + u0 * width, COUNTER.faceY, z0 + v0 * height]);
+        const b = screen([x0 + u1 * width, COUNTER.faceY, z0 + v1 * height]);
+        return <line key={key} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} />;
+      })}
+    </g>
+  );
+}
+
+const COUNTER_MID = (COUNTER.window.z0 + COUNTER.window.z1) / 2;
+
+function camPoints(phase: number, x: number) {
+  const points: Point[] = [];
+  for (let index = 0; index < COUNTER.cam.steps; index++) {
+    const angle = (index / COUNTER.cam.steps) * Math.PI * 2;
+    const radius = counterCamRadius(angle, phase);
+    points.push([
+      x,
+      COUNTER.cam.y + Math.sin(angle) * radius,
+      COUNTER.cam.z + Math.cos(angle) * radius,
+    ]);
+  }
+  return flat(points);
+}
+
+const CAM_HUB = Array.from({ length: 12 }, (_, index) => {
+  const angle = (index / 12) * Math.PI * 2;
+  return [
+    2.56,
+    COUNTER.cam.y + Math.sin(angle) * 0.1,
+    COUNTER.cam.z + Math.cos(angle) * 0.1,
+  ] as Point;
+});
+
+const LEVER_PIVOT = screen([COUNTER.lever.pivotX, COUNTER.lever.y, COUNTER.lever.pivotZ]);
+const LEVER_REST = screen([COUNTER.lever.x, COUNTER.lever.y, COUNTER.lever.z]);
+const ROLLER_REST = screen([COUNTER.cam.x, COUNTER.cam.y, COUNTER.cam.z + COUNTER.cam.base + 0.1]);
+
 /** One forecast, one window, one number. */
 export function NumberArt() {
-  const faceY = -0.2;
+  const loop = usePlateLoop(WHY_LOOP, COUNTER_STILL, (root) => {
+    const tens = root.querySelector<SVGGElement>("[data-counter-tens]");
+    const units = root.querySelector<SVGGElement>("[data-counter-units]");
+    const cam = root.querySelector<SVGPolygonElement>("[data-counter-cam]");
+    const camBack = root.querySelector<SVGPolygonElement>("[data-counter-cam-back]");
+    const lever = root.querySelector<SVGLineElement>("[data-counter-lever]");
+    const knob = root.querySelector<SVGCircleElement>("[data-counter-knob]");
+    const rod = root.querySelector<SVGLineElement>("[data-counter-rod]");
+    const roller = root.querySelector<SVGCircleElement>("[data-counter-roller]");
+    if (!tens || !units || !cam || !camBack || !lever || !knob || !rod || !roller) {
+      return () => {};
+    }
 
-  const face = (x: number, z: number): [number, number] => screen([x, faceY, z]);
-  const ink = (x: number, z: number): [number, number] => screen([x, faceY + 0.01, z]);
+    return (phase) => {
+      const pose = counterPose(phase);
+      const unitShift = -pose.unitsOffset * COUNTER.cellHeight * 10;
+      const tenShift = -pose.tensOffset * COUNTER.cellHeight * 10;
+      units.setAttribute("transform", `translate(0 ${n(unitShift)})`);
+      tens.setAttribute("transform", `translate(0 ${n(tenShift)})`);
 
-  const [leverX, leverY] = screen([1.6, -1.05, 2.9]);
-  const [knobX, knobY] = screen([2.45, -1.05, 2.78]);
+      cam.setAttribute("points", camPoints(phase, 2.55));
+      camBack.setAttribute("points", camPoints(phase, 2.43));
 
-  const window = flat([
-    [-1.55, faceY, 2.05],
-    [1.45, faceY, 2.05],
-    [1.45, faceY, 3.95],
-    [-1.55, faceY, 3.95],
-  ]);
-  const tile = flat([
-    [-0.85, faceY, 2.3],
-    [0.75, faceY, 2.3],
-    [0.75, faceY, 3.7],
-    [-0.85, faceY, 3.7],
-  ]);
+      const knobAt = screen([
+        COUNTER.lever.x,
+        COUNTER.lever.y,
+        COUNTER.lever.z + pose.travel * COUNTER.lever.lift,
+      ]);
+      lever.setAttribute("x2", n(knobAt[0]));
+      lever.setAttribute("y2", n(knobAt[1]));
+      knob.setAttribute("cx", n(knobAt[0]));
+      knob.setAttribute("cy", n(knobAt[1]));
 
-  const [digitBase, digitBaseY] = ink(-0.15, 2.45);
-  const [digitTopX, digitTopY] = ink(-0.15, 3.5);
-  const [flagX, flagY] = ink(-0.45, 3.25);
-  const [footLeftX, footLeftY] = ink(-0.45, 2.45);
-  const [footRightX, footRightY] = ink(0.25, 2.45);
+      const rollerAt = screen([COUNTER.cam.x, COUNTER.cam.y, COUNTER.cam.z + pose.camTop + 0.1]);
+      roller.setAttribute("cx", n(rollerAt[0]));
+      roller.setAttribute("cy", n(rollerAt[1]));
+      rod.setAttribute("x1", n(rollerAt[0]));
+      rod.setAttribute("y1", n(rollerAt[1]));
+      rod.setAttribute("x2", n(knobAt[0]));
+      rod.setAttribute("y2", n(knobAt[1]));
+    };
+  });
 
   return (
     <svg
+      ref={loop}
       viewBox={ISO_VIEWBOX}
       className="w-full"
       role="presentation"
       aria-hidden="true"
       focusable="false"
     >
-      <Plate />
+      <defs>
+        <clipPath id="counter-tens-clip">
+          <polygon points={faceRect(-1.42, 2.15, -0.1, 3.72, COUNTER.faceY)} />
+        </clipPath>
+        <clipPath id="counter-units-clip">
+          <polygon points={faceRect(0.1, 2.15, 1.42, 3.72, COUNTER.faceY)} />
+        </clipPath>
+      </defs>
 
-      {/* cabinet, cap and feet */}
+      <Plate />
+      <PlateTrim />
+
+      {/* cabinet, base and cap */}
       <Slab x={-2.75} y={-2.05} z={0.8} w={4.5} d={1.95} h={0.35} />
       <Slab x={-2.6} y={-1.9} z={1.15} w={4.2} d={1.7} h={3.55} />
       <Slab x={-2.7} y={-2} z={4.7} w={4.4} d={1.9} h={0.25} />
-
-      {/* the one window */}
       <polygon
-        points={window}
-        className="fill-foreground/[0.06] stroke-foreground"
-        strokeWidth={1}
+        points={topRect(-2.55, -1.85, 1.55, -0.25, 4.951)}
+        className="fill-none stroke-foreground/20"
+        strokeWidth={0.7}
       />
-      <polygon points={tile} className="fill-signal stroke-signal" strokeWidth={1} />
+      {(
+        [
+          [-2.55, -1.82],
+          [1.55, -0.28],
+        ] as const
+      ).map(([x, y]) => (
+        <ellipse key={`${x}-${y}`} {...disc(x, y, 4.955, 0.06)} className="fill-foreground/35" />
+      ))}
+      {(
+        [
+          [-2.65, -1.98],
+          [1.65, -1.98],
+          [-2.65, -0.15],
+          [1.65, -0.15],
+        ] as const
+      ).map(([x, y]) => (
+        <ellipse key={`${x}-${y}`} {...disc(x, y, 1.16, 0.08)} className="fill-foreground/35" />
+      ))}
 
-      {/* the single figure */}
-      <g
-        className="stroke-background"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <line x1={digitBase} y1={digitBaseY} x2={digitTopX} y2={digitTopY} />
-        <line x1={digitTopX} y1={digitTopY} x2={flagX} y2={flagY} />
-        <line x1={footLeftX} y1={footLeftY} x2={footRightX} y2={footRightY} />
-      </g>
-
-      {/* hinge line on the tile */}
       <line
-        x1={face(-0.85, 3.55)[0]}
-        y1={face(-0.85, 3.55)[1]}
-        x2={face(0.75, 3.55)[0]}
-        y2={face(0.75, 3.55)[1]}
-        className="stroke-background/40"
+        x1={screen([1.751, -1.9, 2.07])[0]}
+        y1={screen([1.751, -1.9, 2.07])[1]}
+        x2={screen([1.751, -0.2, 2.07])[0]}
+        y2={screen([1.751, -0.2, 2.07])[1]}
+        className="stroke-foreground/25"
         strokeWidth={0.8}
       />
+      <polygon
+        points={sideRect(-1.6, 3.3, -0.9, 3.7, 1.752)}
+        className="fill-background stroke-foreground/40"
+        strokeWidth={0.8}
+      />
+      {[3.5, 3.62].map((z, index) => (
+        <line
+          key={z}
+          x1={screen([1.753, -1.52, z])[0]}
+          y1={screen([1.753, -1.52, z])[1]}
+          x2={screen([1.753, index === 0 ? -1.02 : -1.18, z])[0]}
+          y2={screen([1.753, index === 0 ? -1.02 : -1.18, z])[1]}
+          className="stroke-foreground/30"
+          strokeWidth={0.6}
+        />
+      ))}
+
+      {/* the one window, split into two drums */}
+      <polygon
+        points={faceRect(-1.55, 2.03, 1.55, 3.84, COUNTER.faceY)}
+        className="fill-background stroke-foreground"
+        strokeWidth={1.1}
+      />
+      <polygon
+        points={faceRect(
+          COUNTER.window.x0,
+          COUNTER.window.z0,
+          COUNTER.window.x1,
+          COUNTER.window.z1,
+          COUNTER.faceY,
+        )}
+        className="fill-signal"
+      />
+
+      <g clipPath="url(#counter-tens-clip)">
+        <g data-counter-tens>
+          {COUNTER.tenDigits.map((value, index) => (
+            <Digit
+              key={value}
+              value={String(value)}
+              x={COUNTER.digit.tensX}
+              z={COUNTER_MID - index * COUNTER.cellHeight}
+            />
+          ))}
+        </g>
+      </g>
+      <g clipPath="url(#counter-units-clip)">
+        <g data-counter-units>
+          {COUNTER.unitDigits.map((value, index) => (
+            <Digit
+              key={`${value}-${index}`}
+              value={String(value)}
+              x={COUNTER.digit.unitsX}
+              z={COUNTER_MID - index * COUNTER.cellHeight}
+            />
+          ))}
+        </g>
+      </g>
+
+      {/* divider, bezel and index mark */}
+      <polygon
+        points={faceRect(-0.07, 2.15, 0.07, 3.72, COUNTER.faceY)}
+        className="fill-background stroke-foreground/60"
+        strokeWidth={0.7}
+      />
+      <polygon
+        points={faceRect(-1.52, 2.06, 1.52, 3.81, COUNTER.faceY)}
+        className="fill-none stroke-foreground/25"
+        strokeWidth={0.7}
+      />
+      <polygon
+        points={flat([
+          [-1.5, COUNTER.faceY, 2.99],
+          [-1.5, COUNTER.faceY, 2.88],
+          [-1.41, COUNTER.faceY, 2.935],
+        ])}
+        className="fill-foreground"
+      />
+      {(
+        [
+          [-1.48, 2.12],
+          [1.48, 2.12],
+          [-1.48, 3.75],
+          [1.48, 3.75],
+        ] as const
+      ).map(([x, z]) => (
+        <ellipse key={`${x}-${z}`} {...disc(x, -0.181, z, 0.05)} className="fill-foreground/35" />
+      ))}
 
       {/* label plate and vents on the face */}
       <polygon
-        points={flat([
-          [-1.0, faceY, 4.05],
-          [1.0, faceY, 4.05],
-          [1.0, faceY, 4.4],
-          [-1.0, faceY, 4.4],
-        ])}
+        points={faceRect(-0.9, 3.96, 0.9, 4.3, COUNTER.faceY)}
         className="fill-background stroke-foreground/30"
         strokeWidth={0.8}
       />
-      {[4.16, 4.3].map((z, i) => {
-        const [x1, y1] = face(-0.55, z);
-        const [x2, y2] = face(i === 0 ? 0.35 : 0.55, z);
-        return (
-          <line
-            key={z}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            className="stroke-foreground/30"
-            strokeWidth={0.7}
-          />
-        );
-      })}
-      {[1.35, 1.6, 1.85].map((z) => {
-        const [x1, y1] = face(-1.0, z);
-        const [x2, y2] = face(0.8, z);
-        return (
-          <line
-            key={z}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            className="stroke-foreground/25"
-            strokeWidth={0.7}
-          />
-        );
-      })}
+      {[4.08, 4.2].map((z, index) => (
+        <line
+          key={z}
+          x1={screen([-0.6, COUNTER.faceY, z])[0]}
+          y1={screen([-0.6, COUNTER.faceY, z])[1]}
+          x2={screen([index === 0 ? 0.3 : 0.55, COUNTER.faceY, z])[0]}
+          y2={screen([index === 0 ? 0.3 : 0.55, COUNTER.faceY, z])[1]}
+          className="stroke-foreground/30"
+          strokeWidth={0.7}
+        />
+      ))}
+      {[1.35, 1.55, 1.75].map((z) => (
+        <line
+          key={z}
+          x1={screen([-1.0, COUNTER.faceY, z])[0]}
+          y1={screen([-1.0, COUNTER.faceY, z])[1]}
+          x2={screen([0.8, COUNTER.faceY, z])[0]}
+          y2={screen([0.8, COUNTER.faceY, z])[1]}
+          className="stroke-foreground/25"
+          strokeWidth={0.7}
+        />
+      ))}
+      {[1.4, 1.6, 1.8].map((z) => (
+        <line
+          key={`side-${z}`}
+          x1={screen([1.75, -1.9, z])[0]}
+          y1={screen([1.75, -1.9, z])[1]}
+          x2={screen([1.75, -0.2, z])[0]}
+          y2={screen([1.75, -0.2, z])[1]}
+          className="stroke-foreground/25"
+          strokeWidth={0.7}
+        />
+      ))}
 
-      {/* the advance lever */}
+      {/* the cam, its pillar and the follower */}
+      <Slab x={2.02} y={-1.45} z={0.8} w={0.24} d={0.6} h={1.28} />
+      <Slab x={1.98} y={-1.35} z={2.08} w={0.34} d={0.4} h={0.2} />
+      {(
+        [
+          [2.06, -1.26],
+          [2.24, -1.04],
+        ] as const
+      ).map(([x, y]) => (
+        <ellipse key={`${x}-${y}`} {...disc(x, y, 2.29, 0.06)} className="fill-foreground/40" />
+      ))}
       <line
-        x1={leverX}
-        y1={leverY}
-        x2={knobX}
-        y2={knobY}
+        x1={screen([2.25, COUNTER.cam.y, COUNTER.cam.z])[0]}
+        y1={screen([2.25, COUNTER.cam.y, COUNTER.cam.z])[1]}
+        x2={screen([2.55, COUNTER.cam.y, COUNTER.cam.z])[0]}
+        y2={screen([2.55, COUNTER.cam.y, COUNTER.cam.z])[1]}
+        className="stroke-foreground"
+        strokeWidth={1.4}
+      />
+      <polygon
+        data-counter-cam-back
+        points={camPoints(0, 2.43)}
+        className="fill-foreground/[0.16] stroke-foreground/30"
+        strokeWidth={0.7}
+      />
+      <polygon
+        data-counter-cam
+        points={camPoints(0, 2.55)}
+        className="fill-background stroke-foreground"
+        strokeWidth={1}
+      />
+      <polygon points={flat(CAM_HUB)} className="fill-foreground" />
+
+      <circle
+        data-counter-roller
+        cx={ROLLER_REST[0]}
+        cy={ROLLER_REST[1]}
+        r={1.6}
+        className="fill-background stroke-foreground"
+        strokeWidth={0.9}
+      />
+      <line
+        data-counter-rod
+        x1={ROLLER_REST[0]}
+        y1={ROLLER_REST[1]}
+        x2={LEVER_REST[0]}
+        y2={LEVER_REST[1]}
+        className="stroke-foreground"
+        strokeWidth={1.2}
+      />
+      <line
+        data-counter-lever
+        x1={LEVER_PIVOT[0]}
+        y1={LEVER_PIVOT[1]}
+        x2={LEVER_REST[0]}
+        y2={LEVER_REST[1]}
         className="stroke-foreground"
         strokeWidth={2.2}
         strokeLinecap="round"
       />
       <circle
-        cx={knobX}
-        cy={knobY}
-        r={2.9}
+        cx={LEVER_PIVOT[0]}
+        cy={LEVER_PIVOT[1]}
+        r={2.2}
+        className="fill-background stroke-foreground"
+        strokeWidth={1}
+      />
+      <circle
+        data-counter-knob
+        cx={LEVER_REST[0]}
+        cy={LEVER_REST[1]}
+        r={2.6}
         className="fill-background stroke-foreground"
         strokeWidth={1.1}
       />

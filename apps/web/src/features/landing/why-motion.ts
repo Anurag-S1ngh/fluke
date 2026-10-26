@@ -134,7 +134,7 @@ export const COUNTER = {
   tenDigits: [6, 7] as const,
   digit: { tensX: -0.77, unitsX: 0.77, width: 0.62, height: 0.98 },
   cam: { x: 2.55, y: -1.15, z: 2.2, base: 0.46, amp: 0.24, steps: 48 },
-  lever: { pivotX: 1.75, x: 2.55, y: -1.15, z: 3.02, lift: 0.34 },
+  lever: { pivotX: 1.75, pivotZ: 2.55, x: 2.55, y: -1.15, z: 2.9, lift: 0.4 },
 } as const;
 
 export interface CounterPose {
@@ -152,9 +152,13 @@ export interface CounterPose {
 
 export const COUNTER_STILL = 0.5;
 
-/** The cam's material profile: its radius at a phase of the cycle. */
+/**
+ * The cam's material profile: its radius at a phase of the cycle. A quick rise,
+ * a dwell at 71, a quick fall and a longer dwell at 64 keep the number readable
+ * instead of parked between two digits for most of the loop.
+ */
 const counterTravelAt = (u: number) =>
-  smooth(span(u, 0.1, 0.42)) * (1 - smooth(span(u, 0.58, 0.86)));
+  smooth(span(u, 0.12, 0.26)) * (1 - smooth(span(u, 0.6, 0.74)));
 
 /** Radius of the cam at a screen-plane angle, for the current rotation. */
 export function counterCamRadius(angle: number, phase: number) {
