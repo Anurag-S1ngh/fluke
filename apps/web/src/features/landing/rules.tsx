@@ -3,10 +3,10 @@ import { SectionMark } from "@/components/ui/section-mark";
 const terms = [
   { term: "A winning share", value: "$1.00" },
   { term: "A losing share", value: "$0.00" },
-  { term: "Prices quoted in", value: "cents" },
-  { term: "Trading fees", value: "none" },
-  { term: "Settlement", value: "stated date" },
-  { term: "Counterparty", value: "another reader" },
+  { term: "Prices quoted in", value: "Cents" },
+  { term: "Trading fees", value: "None" },
+  { term: "Settlement", value: "Stated date" },
+  { term: "Counterparty", value: "Another reader" },
 ];
 
 export function Rules() {
@@ -22,21 +22,18 @@ export function Rules() {
             No hidden spread, no house on the other side, no fine print in a modal. The whole
             contract fits on one page.
           </p>
-          <p className="mt-8 max-w-[38ch] border-l-2 border-signal pl-4 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-muted-foreground">
-            If a question cannot be resolved as written, every position is refunded in full.
-          </p>
         </div>
 
-        <dl className="self-end border-t-2 border-foreground">
+        <dl className="self-end bg-secondary/70 px-5">
           {terms.map(({ term, value }) => (
             <div
               key={term}
               className="flex items-baseline justify-between gap-4 border-b border-border py-4"
             >
-              <dt className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground">
+              <dt className="font-sans text-[11px] tracking-[0.14em] text-muted-foreground">
                 {term}
               </dt>
-              <dd className="font-mono text-sm">{value}</dd>
+              <dd className="font-sans text-sm">{value}</dd>
             </div>
           ))}
         </dl>
