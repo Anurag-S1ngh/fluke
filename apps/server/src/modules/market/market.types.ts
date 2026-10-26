@@ -21,6 +21,8 @@ export interface MarketSummary {
   outcome: "YES" | "NO" | null;
   closesAt: Date;
   createdAt: Date;
+  /** Last traded YES price in cents, or null when the book has no trades. */
+  lastPrice: number | null;
 }
 
 export interface MarketDetail {

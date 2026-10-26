@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { db } from "@/services";
-import { marketsTable, usersTable } from "@fluke/db/schema/index";
+import { marketsTable, ordersTable, tradesTable, usersTable } from "@fluke/db/schema/index";
 import { assertTestDatabase, resetDatabase } from "@/test/db";
 import { startServer } from "@/test/http";
 import { SESSION_COOKIE, signSessionToken } from "@/util/jwt";
@@ -46,6 +46,15 @@ const createMarket = async (status: "OPEN" | "DRAFT" = "OPEN") => {
     .returning();
   if (!market) throw new Error("fixture failed: market");
   return market;
+};
+
+const createOrder = async (userId: string, marketId: string, side: "BID" | "ASK") => {
+  const [order] = await db
+    .insert(ordersTable)
+    .values({ userId, marketId, side, outcome: "YES", price: 50, quantity: 1 })
+    .returning();
+  if (!order) throw new Error("fixture failed: order");
+  return order;
 };
 
 const get = async (path: string, userId?: string) => {
@@ -117,6 +126,47 @@ describe("GET /markets/:marketId/history", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ points: [], trades: 0 });
+  });
+});
+
+describe("GET /markets", () => {
+  test("reports the last implied YES price for each market", async () => {
+    const seller = await createUser();
+    const buyer = await createUser();
+    const traded = await createMarket();
+    const quiet = await createMarket();
+    const ask = await createOrder(seller.id, traded.id, "ASK");
+    const bid = await createOrder(buyer.id, traded.id, "BID");
+
+    await db.insert(tradesTable).values([
+      {
+        marketId: traded.id,
+        askOrderId: ask.id,
+        bidOrderId: bid.id,
+        outcome: "YES",
+        quantity: 1,
+        price: 61,
+        createdAt: new Date(Date.now() - 5_000),
+      },
+      {
+        marketId: traded.id,
+        askOrderId: ask.id,
+        bidOrderId: bid.id,
+        outcome: "NO",
+        quantity: 1,
+        price: 30,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const res = await get("/markets?status=OPEN");
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      markets: { id: string; lastPrice: number | null }[];
+    };
+    expect(body.markets.find((entry) => entry.id === traded.id)?.lastPrice).toBe(70);
+    expect(body.markets.find((entry) => entry.id === quiet.id)?.lastPrice).toBeNull();
   });
 });
 

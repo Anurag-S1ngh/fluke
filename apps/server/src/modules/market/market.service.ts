@@ -19,11 +19,42 @@ export const listMarkets = async (status: MarketStatus = "OPEN", viewerId?: stri
   } else {
     await expireMarkets(db);
   }
-  return db
+  const markets = await db
     .select()
     .from(marketsTable)
     .where(eq(marketsTable.status, status))
     .orderBy(desc(marketsTable.createdAt));
+
+  if (markets.length === 0) {
+    return [];
+  }
+
+  const latestTrades = await db
+    .selectDistinctOn([tradesTable.marketId], {
+      marketId: tradesTable.marketId,
+      outcome: tradesTable.outcome,
+      price: tradesTable.price,
+    })
+    .from(tradesTable)
+    .where(
+      inArray(
+        tradesTable.marketId,
+        markets.map((market) => market.id),
+      ),
+    )
+    .orderBy(tradesTable.marketId, desc(tradesTable.createdAt));
+
+  const lastPriceByMarket = new Map(
+    latestTrades.map((trade) => [
+      trade.marketId,
+      trade.outcome === "YES" ? trade.price : 100 - trade.price,
+    ]),
+  );
+
+  return markets.map((market) => ({
+    ...market,
+    lastPrice: lastPriceByMarket.get(market.id) ?? null,
+  }));
 };
 
 export const getMarketById = async (marketId: string) => {
