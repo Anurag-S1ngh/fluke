@@ -17,6 +17,9 @@ export interface MarketSummary {
   outcome: Outcome | null;
   closesAt: string;
   createdAt: string;
+}
+
+export interface MarketListItem extends MarketSummary {
   /** Last traded YES price in cents, or null when the book has no trades. */
   lastPrice: number | null;
 }

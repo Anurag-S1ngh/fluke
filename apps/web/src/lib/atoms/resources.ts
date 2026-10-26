@@ -6,15 +6,15 @@ import type {
   HistoryRange,
   Market,
   MarketHistory,
+  MarketListItem,
   MarketStatus,
-  MarketSummary,
   Order,
   Position,
 } from "@/lib/types";
 import { createResource } from "./resource";
 
 export const useMarkets = createResource((status: MarketStatus) =>
-  api<{ markets: MarketSummary[] }>(`/markets?status=${status}`),
+  api<{ markets: MarketListItem[] }>(`/markets?status=${status}`),
 );
 
 export const useMarket = createResource((marketId: string) =>
