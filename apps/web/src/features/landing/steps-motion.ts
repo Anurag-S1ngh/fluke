@@ -209,11 +209,11 @@ export function beamPose(t: number): BeamPose {
  */
 export const PAYOUT_LOOP = 7000;
 
-export const PAYOUT_SLOT: [number, number, number] = [2.4, -0.7, 1.78];
+export const PAYOUT_SLOT: [number, number, number] = [2.4, -0.7, 1.9];
 export const PAYOUT_LAND: [number, number, number] = [-2.3, 1.3, 1.98];
 export const PAYOUT_REST = screen(PAYOUT_LAND);
 
-const PAYOUT_RISE = 1.7;
+const PAYOUT_RISE = 2.1;
 
 const arc = (s: number): Flat =>
   screen([
@@ -237,22 +237,19 @@ export interface PayoutPose {
   trailOpacity: number;
 }
 
-export const PAYOUT_STILL = 0.32;
+export const PAYOUT_STILL = 0.28;
 
 export function payoutPose(t: number): PayoutPose {
-  if (t < 0.06) {
-    const cleared = smooth(span(t, 0.02, 0.06));
+  if (t < 0.05) {
+    const cleared = smooth(span(t, 0.01, 0.05));
     return { coin: arc(1), opacity: 1 - cleared, trail: 1, trailOpacity: 1 - cleared };
   }
-  if (t < 0.1) {
-    return { coin: arc(0), opacity: smooth(span(t, 0.06, 0.1)), trail: 0, trailOpacity: 0 };
-  }
-  if (t < 0.5) {
-    const flown = span(t, 0.1, 0.5);
+  if (t < 0.44) {
+    const flown = span(t, 0.06, 0.44);
     return {
       coin: arc(flown),
-      // it is at the mouth for a beat; show it once it is clear of the face
-      opacity: smooth(span(flown, 0.04, 0.2)),
+      // it clears the gate's face before it is drawn at full strength
+      opacity: smooth(span(flown, 0, 0.14)),
       trail: flown,
       trailOpacity: 1,
     };
