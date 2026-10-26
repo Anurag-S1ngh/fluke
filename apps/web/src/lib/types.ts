@@ -17,6 +17,8 @@ export interface MarketSummary {
   outcome: Outcome | null;
   closesAt: string;
   createdAt: string;
+  /** Last traded YES price in cents, or null when the book has no trades. */
+  lastPrice: number | null;
 }
 
 export interface Market extends MarketSummary {

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@fluke/ui/lib/utils";
 import { ArrowUpRight } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -10,7 +11,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { StatusTag } from "@/components/ui/status-tag";
 import { useMarkets } from "@/lib/atoms/resources";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatPrice } from "@/lib/format";
 
 export function MarketsList() {
   const { data, error, loading, reload } = useMarkets("OPEN");
@@ -63,7 +64,7 @@ export function MarketsList() {
                   href={`/markets/${market.id}` as Route}
                   className="group block border-b border-border transition-colors hover:bg-muted/40"
                 >
-                  <article className="grid grid-cols-[1fr_auto] items-center gap-4 py-6 sm:gap-10">
+                  <article className="grid grid-cols-[1fr_auto] items-center gap-5 py-6 sm:grid-cols-[1fr_auto_auto] sm:gap-10">
                     <div>
                       <div className="flex flex-wrap items-center gap-3">
                         <StatusTag status={market.status} />
@@ -76,12 +77,32 @@ export function MarketsList() {
                       </h2>
                     </div>
 
-                    <div className="flex items-center justify-end gap-4">
-                      <ArrowUpRight
-                        aria-hidden="true"
-                        className="size-5 text-muted-foreground transition-colors group-hover:text-signal"
-                      />
+                    <div className="text-right">
+                      <p
+                        className={cn(
+                          "font-mono text-2xl leading-none tabular-nums sm:text-3xl",
+                          market.lastPrice === null && "text-muted-foreground",
+                        )}
+                      >
+                        {market.lastPrice === null ? "—" : formatPrice(market.lastPrice)}
+                      </p>
+                      <p className="mt-1.5 font-mono text-[9px] tracking-[0.16em] text-muted-foreground">
+                        {market.lastPrice === null ? "No trades" : "YES"}
+                      </p>
+                      {market.lastPrice === null ? null : (
+                        <div aria-hidden="true" className="mt-2 ml-auto h-1 w-16 bg-muted">
+                          <div
+                            className="h-full bg-signal"
+                            style={{ width: `max(2px, ${market.lastPrice}%)` }}
+                          />
+                        </div>
+                      )}
                     </div>
+
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="hidden size-5 text-muted-foreground transition-colors group-hover:text-signal sm:block"
+                    />
                   </article>
                 </Link>
               ))}
