@@ -154,8 +154,8 @@ export default function Header() {
                 className={cn(
                   "inline-flex items-center border px-2 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4",
                   overlay
-                    ? "border-white hover:bg-white hover:text-[#2036ff] focus-visible:outline-white"
-                    : "border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
+                    ? "border-white bg-white text-[#2036ff] hover:bg-white/90 focus-visible:outline-white"
+                    : "border-foreground bg-foreground text-background hover:bg-background hover:text-foreground focus-visible:outline-foreground",
                 )}
               >
                 Join
