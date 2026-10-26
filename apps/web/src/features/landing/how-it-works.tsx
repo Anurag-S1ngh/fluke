@@ -4,22 +4,14 @@ import { SectionMark } from "@/components/ui/section-mark";
 
 import { BallotArt, BeamArt, PayoutArt } from "./steps-art";
 
-function StepCard({
-  title,
-  body,
-  art,
-}: {
-  title: string;
-  body: string;
-  art: React.ReactNode;
-}) {
+function StepCard({ title, body, art }: { title: string; body: string; art: React.ReactNode }) {
   return (
-    <li className="grid grid-cols-2 items-stretch">
-      <div className="flex items-center justify-center border-r border-foreground/15 bg-secondary/40 px-1 py-4">
-        <div className="w-[90%]">{art}</div>
+    <li className="flex flex-col">
+      <div className="flex flex-1 items-center justify-center border-b border-foreground/15 bg-secondary/40 px-6 py-8">
+        <div className="w-full max-w-[14rem]">{art}</div>
       </div>
 
-      <div className="flex flex-col px-5 py-6">
+      <div className="flex flex-col px-6 py-7">
         <h3 className="font-serif text-xl">{title}</h3>
         <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{body}</p>
       </div>
@@ -41,7 +33,7 @@ export function HowItWorks() {
           </p>
         </div>
 
-        <ol className="mx-auto mt-16 grid max-w-6xl divide-y divide-foreground/15 border border-foreground/15 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <ol className="mx-auto mt-16 grid max-w-6xl divide-y divide-foreground/15 border border-foreground/15 md:grid-cols-3 md:divide-x md:divide-y-0">
           <StepCard
             title="Take a side"
             body="Read the question and buy YES or NO. Your conviction becomes a position, priced in cents."
