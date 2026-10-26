@@ -117,13 +117,6 @@ const PAPER_CLIP = flat([
   [STAKE.paper.x0, STAKE.paper.y1, STAKE.paper.z],
 ]);
 
-const PLATEN_CLIP = flat([
-  [-2.55, -2.4, 1.7],
-  [1.55, -2.4, 1.7],
-  [1.55, 1.75, 1.7],
-  [-2.55, 1.75, 1.7],
-]);
-
 const WHEEL = disc(STAKE.wheel.x, STAKE.wheel.y, STAKE.wheel.z, STAKE.wheel.r);
 const WHEEL_CENTRE = screen([STAKE.wheel.x, STAKE.wheel.y, STAKE.wheel.z]);
 const CUP = screen(STAKE.coinCup);
@@ -242,9 +235,6 @@ export function StakeArt() {
         <clipPath id="stake-paper-clip">
           <polygon points={PAPER_CLIP} />
         </clipPath>
-        <clipPath id="stake-platen-clip">
-          <polygon points={PLATEN_CLIP} />
-        </clipPath>
       </defs>
 
       <Plate />
@@ -305,17 +295,15 @@ export function StakeArt() {
 
       {/* the lips that keep the tape ends behind an edge */}
       <Slab x={-2.18} y={-1.45} z={1.72} w={0.18} d={2.3} h={0.09} />
-      <Slab x={1.28} y={-1.45} z={1.72} w={0.18} d={2.3} h={0.09} />
       {(
         [
           [-2.09, -1.36],
           [-2.09, 0.76],
-          [1.37, -1.36],
-          [1.37, 0.76],
         ] as const
       ).map(([x, y]) => (
         <ellipse key={`${x}-${y}`} {...disc(x, y, 1.815, 0.065)} className="fill-foreground/40" />
       ))}
+      <polygon points={topRect(1.32, -1.45, 1.39, 0.85, 1.776)} className="fill-foreground/65" />
 
       {/* the drawer the coin is kept in, set into the platen face */}
       <polygon

@@ -97,10 +97,10 @@ export function stakePose(phase: number): StakePose {
     coin = lerp3(coin, STAKE.coinCup, ontoCup);
   }
   if (falling > 0) {
-    coin = [STAKE.coinCup[0], STAKE.coinCup[1], STAKE.coinCup[2] - 1.0 * falling];
+    coin = [STAKE.coinCup[0], STAKE.coinCup[1], STAKE.coinCup[2] - 0.16 * falling];
   }
 
-  const coinOpacity = t < 0.02 || t > 0.6 ? 0 : 1 - smooth(span(t, 0.545, 0.595));
+  const coinOpacity = t < 0.02 || t > 0.57 ? 0 : 1 - smooth(span(t, 0.52, 0.56));
 
   const wheel = Math.PI * 2 * smooth(span(t, 0.22, 0.56));
   const ram = smooth(span(t, 0.27, 0.4)) * (1 - smooth(span(t, 0.42, 0.54)));
