@@ -1,11 +1,35 @@
+"use client";
+
 import { Coin, disc, flat, Plate, screen, Slab, type Point } from "./mini-iso";
+import { useStepsLoop } from "./steps-loop";
+import { BALLOT_LOOP, ballotPose } from "./steps-motion";
+
+const BALLOT_PIVOT = screen([0, -0.9, 2.7]);
 
 export function BallotArt() {
-  const [pivotX, pivotY] = screen([0, -0.9, 2.7]);
-  const [tipX, tipY] = screen([-2.5, 1.4, 2.55]);
+  const rest = ballotPose(0);
+
+  const loop = useStepsLoop(BALLOT_LOOP, 0, (root) => {
+    const lever = root.querySelector<SVGLineElement>("[data-lever]");
+    const tip = root.querySelector<SVGCircleElement>("[data-lever-tip]");
+    const yes = root.querySelector<SVGGElement>("[data-side-yes]");
+    const no = root.querySelector<SVGGElement>("[data-side-no]");
+    if (!lever || !tip || !yes || !no) return () => {};
+
+    return (phase) => {
+      const pose = ballotPose(phase);
+      lever.setAttribute("x2", String(pose.tip[0]));
+      lever.setAttribute("y2", String(pose.tip[1]));
+      tip.setAttribute("cx", String(pose.tip[0]));
+      tip.setAttribute("cy", String(pose.tip[1]));
+      yes.setAttribute("opacity", String(pose.litYes));
+      no.setAttribute("opacity", String(pose.litNo));
+    };
+  });
 
   return (
     <svg
+      ref={loop}
       viewBox="0 0 132 120"
       className="w-full"
       role="presentation"
@@ -15,23 +39,31 @@ export function BallotArt() {
       <Plate />
 
       {/* the two sides, registered on the plate */}
-      <Slab x={-3} y={0.8} z={0.8} w={1.7} d={1.7} h={0.7} signal />
+      <Slab x={-3} y={0.8} z={0.8} w={1.7} d={1.7} h={0.7} />
+      <g data-side-yes opacity={rest.litYes}>
+        <Slab x={-3} y={0.8} z={0.8} w={1.7} d={1.7} h={0.7} signal />
+      </g>
       <Slab x={1.5} y={0.9} z={0.8} w={1.5} d={1.5} h={0.55} />
+      <g data-side-no opacity={rest.litNo}>
+        <Slab x={1.5} y={0.9} z={0.8} w={1.5} d={1.5} h={0.55} signal />
+      </g>
 
       {/* pivot block and its lever, thrown to one side */}
       <Slab x={-1} y={-1.9} z={0.8} w={2} d={2} h={1.9} />
       <line
-        x1={pivotX}
-        y1={pivotY}
-        x2={tipX}
-        y2={tipY}
+        data-lever
+        x1={BALLOT_PIVOT[0]}
+        y1={BALLOT_PIVOT[1]}
+        x2={rest.tip[0]}
+        y2={rest.tip[1]}
         className="stroke-foreground"
         strokeWidth={4.4}
         strokeLinecap="round"
       />
       <circle
-        cx={tipX}
-        cy={tipY}
+        data-lever-tip
+        cx={rest.tip[0]}
+        cy={rest.tip[1]}
         r={5.2}
         className="fill-background stroke-foreground"
         strokeWidth={1.2}
