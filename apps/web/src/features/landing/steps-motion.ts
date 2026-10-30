@@ -130,8 +130,7 @@ const BEAM_EVENTS = [
 ] as const;
 
 /** Damped recoil after an order lands on a pan (seconds since contact). */
-const wobble = (since: number) =>
-  since <= 0 ? 0 : Math.exp(-7 * since) * Math.sin(18 * since);
+const wobble = (since: number) => (since <= 0 ? 0 : Math.exp(-7 * since) * Math.sin(18 * since));
 
 export interface BeamSide {
   end: Flat;
@@ -167,10 +166,7 @@ function orderAt(t: number, liftFrom: number, liftTo: number, fallFrom: number, 
 }
 
 export function beamPose(t: number): BeamPose {
-  const tilt = Math.max(
-    -1.15,
-    Math.min(1.15, stepped(t, BEAM_LOOP, 0, BEAM_EVENTS, BEAM)),
-  );
+  const tilt = Math.max(-1.15, Math.min(1.15, stepped(t, BEAM_LOOP, 0, BEAM_EVENTS, BEAM)));
 
   const leftOrder = orderAt(t, 0.1, 0.2, 0.62, 0.7);
   const rightOrder = orderAt(t, 0.46, 0.56, 0.8, 0.88);
