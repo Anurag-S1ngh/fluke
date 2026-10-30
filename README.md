@@ -9,14 +9,16 @@ A play-money prediction market. Every question trades in cents between 1¢ and 9
 - **Trading** — limit orders cross the book automatically with price-time priority. Partial fills, cash/share reservation, and no self-trading.
 - **Portfolio** — cash, open and settled positions, resting orders, and cancellation.
 - **Admin desk** — create, publish, close, resolve, refund, and delete markets.
+- **Background worker** — a BullMQ worker sends OTP emails and sweeps for expired markets every 60 seconds, so books close even when nobody is using the app.
 - **Demo data** — a seeder that builds users, markets, a real trade tape, positions, and ledger history.
 
 ## Stack
 
 - **Web** — Next.js 16 (App Router), React 19, Tailwind CSS, shared shadcn/ui primitives in `packages/ui`
 - **API** — Express 5 on Bun, Zod validation, JWT session cookie
-- **Data** — PostgreSQL with Drizzle ORM; Redis for OTP storage
-- **Email** — Resend for OTP delivery
+- **Worker** — BullMQ on Bun for OTP delivery and scheduled market expiry
+- **Data** — PostgreSQL with Drizzle ORM; Redis for OTP storage and job queues
+- **Email** — Resend, called from the worker
 - **Tooling** — Turborepo, Oxlint + Oxfmt, Varlock for environment schemas
 
 ## Project structure
@@ -25,13 +27,16 @@ A play-money prediction market. Every question trades in cents between 1¢ and 9
 fluke/
 ├── apps/
 │   ├── web/                 # Next.js frontend (:3001)
-│   └── server/              # Express API (:3000, mounted at /api/v1)
+│   ├── server/              # Express API (:3000, mounted at /api/v1)
+│   └── worker/              # BullMQ worker: OTP emails and market expiry
 ├── packages/
 │   ├── db/                  # Drizzle schema, migrations, and demo seeder
 │   ├── email/               # Resend client and OTP template
+│   ├── queue/               # Queue names, job contracts, and connection helpers
 │   ├── redis/               # Redis client
 │   ├── ui/                  # Shared shadcn/ui components and global styles
 │   └── config/              # Shared TypeScript/lint configuration
+├── docker/                  # Postgres/Redis compose file and test DB init
 ├── turbo.json
 └── package.json
 ```
@@ -69,7 +74,7 @@ The `postinstall` script runs `varlock codegen` to generate each package's typed
 
 ### 2. Configure environment
 
-`.env` files are gitignored. Each app owns a `.env.schema` that documents its variables; copy those values into local `.env` files.
+`.env` files are gitignored. Apps document their variables in a `.env.schema`; copy those values into local `.env` files. The worker reuses the server's schema and environment, so it needs no file of its own.
 
 **`apps/server/.env`**
 
@@ -139,13 +144,17 @@ bun run dev
 
 - Web: [http://localhost:3001](http://localhost:3001)
 - API: [http://localhost:3000](http://localhost:3000)
+- Worker: no port — it logs `[worker] ready` once both job workers are listening
 
 Or run one at a time:
 
 ```bash
 bun run dev:web
 bun run dev:server
+bun run dev:worker
 ```
+
+`bun run dev` starts all three. If you run them separately, keep the worker up too: OTP emails are queued by the API and delivered by the worker, and expired markets are closed by its 60-second sweep.
 
 ## Scripts
 
@@ -153,9 +162,10 @@ Run these from the repository root.
 
 | Script                 | Purpose                                              |
 | ---------------------- | ---------------------------------------------------- |
-| `bun run dev`          | Start web and server together                        |
+| `bun run dev`          | Start web, server, and worker together               |
 | `bun run dev:web`      | Start only the Next.js app                           |
 | `bun run dev:server`   | Start only the API                                   |
+| `bun run dev:worker`   | Start only the background worker                     |
 | `bun run build`        | Build all apps and packages                          |
 | `bun run check-types`  | Type-check every workspace                           |
 | `bun run check`        | Run Oxlint and format with Oxfmt                     |
@@ -181,7 +191,7 @@ Server-only commands, run from `apps/server`:
 
 ## Testing
 
-The server has unit/integration tests for auth, order matching, settlement, and positions. They talk to a real PostgreSQL database and Redis, and they **truncate tables between tests**.
+The server has unit/integration tests for auth, market history, order matching, settlement, and positions. They talk to a real PostgreSQL database and Redis, and they **truncate tables between tests**.
 
 The suite refuses to run unless the database name ends in `_test`:
 
@@ -234,11 +244,11 @@ bun run compose:up
 bun run db:test:push
 ```
 
-Email delivery is mocked in tests, so no Resend key is exercised there.
+The OTP queue is mocked in tests, so no Resend key or running worker is exercised there.
 
 ## Environment and secrets
 
-Each app owns an `.env.schema` consumed by [Varlock](https://varlock.dev); the generated `src/env.ts` files are typed. Commit schemas, never `.env` files. Bun's automatic env loading is disabled in `bunfig.toml` — Varlock loads configuration at startup, including in standalone scripts like the seeder and Drizzle config.
+Each app owns an `.env.schema` consumed by [Varlock](https://varlock.dev); the generated `src/env.ts` files are typed. Commit schemas, never `.env` files. Bun's automatic env loading is disabled in `bunfig.toml` — Varlock loads configuration at startup, including in standalone scripts like the seeder and Drizzle config. The worker's schema re-exports the server's variables, so both processes share one `.env`.
 
 ## Current limitations
 
